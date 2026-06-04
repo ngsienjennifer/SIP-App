@@ -42,17 +42,22 @@
         <i data-lucide="home"></i>
         Home
       </button>
-
+    
       <button class="tab" data-tab="stats">
         <i data-lucide="bar-chart-3"></i>
         Stats
       </button>
-
+    
       <button class="tab" data-tab="ring">
         <i data-lucide="circle"></i>
         Ring
       </button>
-
+    
+      <button class="tab" data-tab="rewards">
+        <i data-lucide="gift"></i>
+        Rewards
+      </button>
+    
       <button class="tab" data-tab="settings">
         <i data-lucide="settings"></i>
         Settings
@@ -124,6 +129,27 @@
       </button>
     </section>
 
+    <section class="card quick-actions-card">
+      <h2>Quick Actions</h2>
+    
+      <div class="quick-actions">
+        <button class="quick-action" data-action="water">
+          <i data-lucide="glass-water"></i>
+          Water Walk
+        </button>
+    
+        <button class="quick-action" data-action="stairs">
+          <i data-lucide="stairs"></i>
+          Take Stairs
+        </button>
+    
+        <button class="quick-action" data-action="stretch">
+          <i data-lucide="person-standing"></i>
+          Stretch
+        </button>
+      </div>
+    </section>
+    
     <section id="stats" class="tab-page">
       <section class="card">
         <div class="card-title-row">
@@ -246,6 +272,75 @@
       </section>
     </section>
 
+    <section id="rewards" class="tab-page">
+      <section class="card reward-hero">
+        <div>
+          <p class="eyebrow-dark">Reward Wallet</p>
+          <h2 id="rewardPointsDisplay">0 points</h2>
+          <p class="hint">Earn points by completing movement goals and reducing long sitting sessions.</p>
+        </div>
+    
+        <div class="reward-coin">
+          <i data-lucide="star"></i>
+        </div>
+      </section>
+    
+      <section class="card">
+        <div class="card-title-row">
+          <h2>Redeem Rewards</h2>
+          <span>Prototype</span>
+        </div>
+    
+        <div class="reward-shop">
+          <button class="reward-item" data-cost="100" data-name="Hydration Badge">
+            <i data-lucide="droplets"></i>
+            <div>
+              <strong>Hydration Badge</strong>
+              <p>100 points</p>
+            </div>
+          </button>
+    
+          <button class="reward-item" data-cost="200" data-name="Focus Booster Badge">
+            <i data-lucide="zap"></i>
+            <div>
+              <strong>Focus Booster</strong>
+              <p>200 points</p>
+            </div>
+          </button>
+    
+          <button class="reward-item" data-cost="300" data-name="Wellness Voucher">
+            <i data-lucide="ticket"></i>
+            <div>
+              <strong>Wellness Voucher</strong>
+              <p>300 points</p>
+            </div>
+          </button>
+    
+          <button class="reward-item" data-cost="500" data-name="Active Lifestyle Reward">
+            <i data-lucide="shopping-bag"></i>
+            <div>
+              <strong>Active Lifestyle Reward</strong>
+              <p>500 points</p>
+            </div>
+          </button>
+        </div>
+      </section>
+    
+      <section class="card">
+        <h2>Unlocked Rewards</h2>
+        <div id="unlockedRewards" class="unlocked-list">
+          <p class="hint">No rewards redeemed yet.</p>
+        </div>
+      </section>
+    
+      <section class="card">
+        <h2>Reward Idea</h2>
+        <p class="hint">
+          In a real version, points could be exchanged for campus wellness perks, gym trials,
+          healthy drink vouchers, or fitness-related discounts.
+        </p>
+      </section>
+    </section>
     <section id="settings" class="tab-page">
       <section class="card">
         <h2>Reminder Settings</h2>
@@ -275,27 +370,6 @@
             <option>Strong</option>
           </select>
         </label>
-      </section>
-
-      <section class="card">
-        <h2>Reward System</h2>
-
-        <div class="reward-list">
-          <div>
-            <i data-lucide="gift"></i>
-            <p>Earn points after movement goals</p>
-          </div>
-
-          <div>
-            <i data-lucide="award"></i>
-            <p>Unlock badges and streaks</p>
-          </div>
-
-          <div>
-            <i data-lucide="users"></i>
-            <p>Future idea: compete with friends</p>
-          </div>
-        </div>
       </section>
 
       <section class="card">
