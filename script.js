@@ -14,6 +14,7 @@ let dndTimer = null;
 let dndRemainingSeconds = 0;
 
 let history = [];
+let unlockedRewards = [];
 
 const timerDisplay = document.getElementById("timerDisplay");
 const timerMode = document.getElementById("timerMode");
@@ -24,6 +25,8 @@ const hologramIcon = document.getElementById("hologramIcon");
 
 const breaksToday = document.getElementById("breaksToday");
 const pointsToday = document.getElementById("pointsToday");
+const streakDays = document.getElementById("streakDays");
+
 const movementBreaks = document.getElementById("movementBreaks");
 const totalPoints = document.getElementById("totalPoints");
 const totalSitting = document.getElementById("totalSitting");
@@ -50,10 +53,12 @@ const dndStatusText = document.getElementById("dndStatusText");
 const historyList = document.getElementById("historyList");
 const badgeList = document.getElementById("badgeList");
 
+const rewardPointsDisplay = document.getElementById("rewardPointsDisplay");
+const unlockedRewardsBox = document.getElementById("unlockedRewards");
+
 function formatTime(totalSeconds) {
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
-
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
@@ -66,6 +71,10 @@ function updateUI() {
   totalPoints.textContent = points;
   totalSitting.textContent = `${Math.floor(seconds / 60)} min`;
 
+  if (streakDays) {
+    streakDays.textContent = breaks >= 1 ? "8" : "7";
+  }
+
   progressFill.style.width = `${progress}%`;
   progressPercent.textContent = `${progress}%`;
 
@@ -74,15 +83,21 @@ function updateUI() {
 
   connectionText.textContent = ringConnected ? "Ring Connected" : "Ring Disconnected";
   connectBtn.textContent = ringConnected ? "Disconnect" : "Connect";
+
   ringStatusText.textContent = ringConnected
     ? `Ring is connected. Current mode: ${getModeLabel()}`
     : "Ring is disconnected. Connect to start monitoring.";
 
   connectionDot.classList.toggle("off", !ringConnected);
 
+  if (rewardPointsDisplay) {
+    rewardPointsDisplay.textContent = `${points} points`;
+  }
+
   updateDndText();
   updateHistory();
   updateBadges();
+  updateRewards();
 }
 
 function getModeLabel() {
@@ -243,8 +258,10 @@ function completeGoal() {
     return;
   }
 
+  const earned = calculatePoints();
+
   breaks += 1;
-  points += calculatePoints();
+  points += earned;
   progress = Math.min(100, progress + 15);
   seconds = 0;
 
@@ -253,7 +270,7 @@ function completeGoal() {
   setHologram(
     "success",
     "Goal achieved!",
-    `+${calculatePoints()} points earned. Hologram powers down.`,
+    `+${earned} points earned. Hologram powers down.`,
     "badge-check"
   );
 
@@ -390,7 +407,7 @@ function addHistory(action, detail) {
     time
   });
 
-  if (history.length > 5) {
+  if (history.length > 6) {
     history.pop();
   }
 }
@@ -425,24 +442,109 @@ function updateBadges() {
   const firstMoveClass = breaks >= 1 ? "badge" : "badge locked";
   const threeBreaksClass = breaks >= 3 ? "badge" : "badge locked";
   const pointsClass = points >= 500 ? "badge" : "badge locked";
+  const focusClass = points >= 300 ? "badge" : "badge locked";
 
   badgeList.innerHTML = `
     <div class="${firstMoveClass}">🌱 First Move</div>
     <div class="${threeBreaksClass}">🔥 3 Breaks</div>
+    <div class="${focusClass}">🧠 Focus Builder</div>
     <div class="${pointsClass}">⭐ 500 Points</div>
   `;
 }
 
+function logQuickAction(action) {
+  let label = "";
+  let earned = 0;
+
+  if (action === "water") {
+    label = "Water Walk";
+    earned = 30;
+  }
+
+  if (action === "stairs") {
+    label = "Took Stairs";
+    earned = 40;
+  }
+
+  if (action === "stretch") {
+    label = "Quick Stretch";
+    earned = 25;
+  }
+
+  breaks += 1;
+  points += earned;
+  progress = Math.min(100, progress + 8);
+
+  setHologram(
+    "success",
+    `${label} logged!`,
+    `+${earned} points earned for adding movement into your routine.`,
+    "badge-check"
+  );
+
+  addHistory(label, `+${earned} points`);
+  updateUI();
+}
+
+function redeemReward(cost, rewardName) {
+  if (points < cost) {
+    setHologram(
+      "active",
+      "Not enough points",
+      `${rewardName} needs ${cost} points. Keep moving to unlock it.`,
+      "lock"
+    );
+    return;
+  }
+
+  points -= cost;
+  unlockedRewards.unshift(rewardName);
+
+  setHologram(
+    "success",
+    "Reward redeemed!",
+    `${rewardName} has been added to your reward wallet.`,
+    "gift"
+  );
+
+  addHistory("Reward redeemed", rewardName);
+  updateUI();
+}
+
+function updateRewards() {
+  if (!unlockedRewardsBox) return;
+
+  if (unlockedRewards.length === 0) {
+    unlockedRewardsBox.innerHTML = `<p class="hint">No rewards redeemed yet.</p>`;
+    return;
+  }
+
+  unlockedRewardsBox.innerHTML = unlockedRewards
+    .map(reward => `<div class="unlocked-item">🎁 ${reward}</div>`)
+    .join("");
+}
+
 function changeTheme() {
   const theme = themeSelect.value;
+
   document.body.setAttribute("data-theme", theme);
+  document.documentElement.setAttribute("data-theme", theme);
+
   localStorage.setItem("moveRingTheme", theme);
+
+  setHologram(
+    "idle",
+    "Theme changed",
+    `Your app theme is now ${themeSelect.options[themeSelect.selectedIndex].text}.`,
+    "palette"
+  );
 }
 
 function loadSavedTheme() {
   const savedTheme = localStorage.getItem("moveRingTheme") || "ocean";
 
   document.body.setAttribute("data-theme", savedTheme);
+  document.documentElement.setAttribute("data-theme", savedTheme);
 
   if (themeSelect) {
     themeSelect.value = savedTheme;
@@ -468,6 +570,20 @@ document.getElementById("pauseBtn").addEventListener("click", pauseTimer);
 document.getElementById("resetBtn").addEventListener("click", resetTimer);
 document.getElementById("completeGoalBtn").addEventListener("click", completeGoal);
 connectBtn.addEventListener("click", toggleConnection);
+
+document.querySelectorAll(".quick-action").forEach(button => {
+  button.addEventListener("click", () => {
+    logQuickAction(button.dataset.action);
+  });
+});
+
+document.querySelectorAll(".reward-item").forEach(button => {
+  button.addEventListener("click", () => {
+    const cost = Number(button.dataset.cost);
+    const rewardName = button.dataset.name;
+    redeemReward(cost, rewardName);
+  });
+});
 
 if (themeSelect) {
   themeSelect.addEventListener("change", changeTheme);
