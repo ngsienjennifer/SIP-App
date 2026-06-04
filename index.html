@@ -321,51 +321,51 @@
         </div>
     
         <div class="reward-shop">
-          <button class="reward-item" data-cost="150" data-name="$2 Campus Drink Voucher">
+          <button class="reward-item" data-cost="400" data-name="$2 Campus Drink Voucher">
             <i data-lucide="coffee"></i>
             <div>
               <strong>$2 Campus Drink Voucher</strong>
-              <p>150 points · Small daily reward</p>
+              <p>400 points · Small daily reward</p>
             </div>
           </button>
         
-          <button class="reward-item" data-cost="250" data-name="Healthy Meal Discount">
+          <button class="reward-item" data-cost="650" data-name="Healthy Meal Discount">
             <i data-lucide="salad"></i>
             <div>
               <strong>Healthy Meal Discount</strong>
-              <p>250 points · Encourages better routines</p>
+              <p>650 points · Encourages better eating habits</p>
             </div>
           </button>
         
-          <button class="reward-item" data-cost="900" data-name="1-Month Gym Membership Discount">
-            <i data-lucide="dumbbell"></i>
+          <button class="reward-item" data-cost="1200" data-name="Sports Bottle / Towel Reward">
+            <i data-lucide="gift"></i>
             <div>
-              <strong>1-Month Gym Membership Discount</strong>
-              <p>900 points · Gym membership reward</p>
+              <strong>Sports Bottle / Towel Reward</strong>
+              <p>1200 points · Useful active lifestyle item</p>
             </div>
           </button>
         
-          <button class="reward-item" data-cost="600" data-name="Lululemon Discount Voucher">
+          <button class="reward-item" data-cost="1800" data-name="Lululemon Discount Voucher">
             <i data-lucide="shopping-bag"></i>
             <div>
               <strong>Lululemon Discount Voucher</strong>
-              <p>600 points · Activewear incentive</p>
+              <p>1800 points · Example activewear incentive</p>
             </div>
           </button>
         
-          <button class="reward-item" data-cost="800" data-name="Gym Membership Discount">
+          <button class="reward-item" data-cost="2500" data-name="1-Month Gym Membership Discount">
+            <i data-lucide="dumbbell"></i>
+            <div>
+              <strong>1-Month Gym Membership Discount</strong>
+              <p>2500 points · Encourages continued activity</p>
+            </div>
+          </button>
+        
+          <button class="reward-item" data-cost="3200" data-name="Active Lifestyle Bundle">
             <i data-lucide="ticket-percent"></i>
             <div>
-              <strong>Gym Membership Discount</strong>
-              <p>800 points · Supports active lifestyle</p>
-            </div>
-          </button>
-        
-          <button class="reward-item" data-cost="1000" data-name="Active Lifestyle Bundle">
-            <i data-lucide="gift"></i>
-            <div>
               <strong>Active Lifestyle Bundle</strong>
-              <p>1000 points · Bottle, towel, or fitness gear</p>
+              <p>3200 points · Fitness gear / wellness bundle</p>
             </div>
           </button>
         </div>
@@ -406,6 +406,22 @@
             <option>Shoulder roll + posture reset</option>
           </select>
         </label>
+
+        <label>
+        Daily movement points goal
+        <input id="dailyGoalInput" type="number" min="100" max="5000" value="600" />
+        <small>points per day</small>
+      </label>
+      
+      <button id="saveGoalBtn" class="complete-btn">
+        <i data-lucide="target"></i>
+        Save Daily Goal
+      </button>
+      
+      <button id="resetDemoBtn" class="complete-btn">
+        <i data-lucide="rotate-ccw"></i>
+        Reset Demo Progress
+      </button>
 
         <label>
           Vibration strength
