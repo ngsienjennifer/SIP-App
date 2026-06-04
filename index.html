@@ -138,6 +138,21 @@
         <p class="hint">
           Progress increases when you complete movement goals after long sitting.
         </p>
+        <section class="card">
+          <h2>Recent Break History</h2>
+          <div id="historyList" class="history-list">
+            <p class="hint">No movement breaks logged yet.</p>
+          </div>
+        </section>
+        
+        <section class="card">
+          <h2>Badges</h2>
+          <div id="badgeList" class="badge-list">
+            <div class="badge locked">🌱 First Move</div>
+            <div class="badge locked">🔥 3 Breaks</div>
+            <div class="badge locked">⭐ 500 Points</div>
+          </div>
+        </section>
       </section>
 
       <section class="grid-2">
@@ -281,6 +296,52 @@
             <p>Future idea: compete with friends</p>
           </div>
         </div>
+      </section>
+
+      <section class="card">
+        <h2>Theme</h2>
+      
+        <label>
+          App theme
+          <select id="themeSelect">
+            <option value="ocean">Ocean Blue</option>
+            <option value="mint">Mint Green</option>
+            <option value="sakura">Sakura Pink</option>
+            <option value="dark">Dark Mode</option>
+          </select>
+        </label>
+      </section>
+      
+      <section class="card">
+        <h2>Do Not Disturb Mode</h2>
+      
+        <label>
+          DND mode
+          <select id="dndSelect">
+            <option value="off">Off - Normal reminders</option>
+            <option value="class">Class Mode - Silent hologram only</option>
+            <option value="exam">Exam Mode - No interruption</option>
+            <option value="focus">Focus Mode - Softer reminders</option>
+          </select>
+        </label>
+      
+        <label>
+          DND duration
+          <select id="dndDuration">
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="120">2 hours</option>
+          </select>
+        </label>
+      
+        <button id="dndBtn" class="complete-btn">
+          <i data-lucide="moon"></i>
+          Activate DND
+        </button>
+      
+        <p class="hint" id="dndStatusText">
+          DND is currently off.
+        </p>
       </section>
     </section>
   </main>
