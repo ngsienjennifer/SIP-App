@@ -7,7 +7,9 @@ let breaks = 0;
 let points = 0;              // redeemable wallet points
 let dailyEarned = 0;         // points earned today
 let dailyGoal = 600;         // daily target
-let progress = 0;
+let progress = 0
+let streak = 0;              // starts from 0
+let dailyGoalCompleted = false;
 let ringConnected = true;
 let battery = 82;
 
@@ -78,7 +80,7 @@ function updateUI() {
   totalSitting.textContent = `${Math.floor(seconds / 60)} min`;
 
   if (streakDays) {
-    streakDays.textContent = breaks >= 1 ? "8" : "7";
+    streakDays.textContent = streak;
   }
 
   progress = Math.min(100, Math.round((dailyEarned / dailyGoal) * 100));
@@ -267,6 +269,24 @@ function triggerReminder() {
   updateUI();
 }
 
+function addMovementPoints(earned) {
+  points += earned;
+  dailyEarned += earned;
+
+  if (dailyEarned >= dailyGoal && !dailyGoalCompleted) {
+    streak += 1;
+    dailyGoalCompleted = true;
+
+    setHologram(
+      "success",
+      "Daily goal completed!",
+      `You reached ${dailyGoal} movement points today. Your streak is now ${streak} day(s)!`,
+      "flame"
+    );
+
+    addHistory("Daily goal completed", `Streak: ${streak} day(s)`);
+  }
+}
 function completeGoal() {
   if (!ringConnected) {
     setHologram(
@@ -281,8 +301,7 @@ function completeGoal() {
   const earned = calculatePoints();
 
   breaks += 1;
-  points += earned;
-  dailyEarned += earned;
+  addMovementPoints(earned);
   seconds = 0;
 
   timerMode.textContent = "Goal done";
@@ -517,8 +536,7 @@ function logQuickAction(action) {
   if (!selected) return;
 
   breaks += 1;
-  points += selected.earned;
-  dailyEarned += selected.earned;
+  addMovementPoints(selected.earned);
 
   setHologram(
     "success",
