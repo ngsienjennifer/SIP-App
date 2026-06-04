@@ -4,8 +4,10 @@ let seconds = 0;
 let timer = null;
 
 let breaks = 0;
-let points = 0;
-let progress = 35;
+let points = 0;              // redeemable wallet points
+let dailyEarned = 0;         // points earned today
+let dailyGoal = 600;         // daily target
+let progress = 0;
 let ringConnected = true;
 let battery = 82;
 
@@ -33,6 +35,10 @@ const totalSitting = document.getElementById("totalSitting");
 
 const progressFill = document.getElementById("progressFill");
 const progressPercent = document.getElementById("progressPercent");
+
+const dailyGoalText = document.getElementById("dailyGoalText");
+const dailyPointsEarned = document.getElementById("dailyPointsEarned");
+const dailyPointsLeft = document.getElementById("dailyPointsLeft");
 
 const connectionText = document.getElementById("connectionText");
 const connectionDot = document.getElementById("connectionDot");
@@ -75,8 +81,22 @@ function updateUI() {
     streakDays.textContent = breaks >= 1 ? "8" : "7";
   }
 
+  progress = Math.min(100, Math.round((dailyEarned / dailyGoal) * 100));
+  
   progressFill.style.width = `${progress}%`;
   progressPercent.textContent = `${progress}%`;
+  
+  if (dailyGoalText) {
+    dailyGoalText.textContent = `Daily goal: earn ${dailyGoal} movement points today.`;
+  }
+  
+  if (dailyPointsEarned) {
+    dailyPointsEarned.textContent = dailyEarned;
+  }
+  
+  if (dailyPointsLeft) {
+    dailyPointsLeft.textContent = Math.max(0, dailyGoal - dailyEarned);
+  }
 
   batteryText.textContent = ringConnected ? `${battery}%` : "--";
   batteryFill.style.width = ringConnected ? `${battery}%` : "0%";
@@ -262,7 +282,7 @@ function completeGoal() {
 
   breaks += 1;
   points += earned;
-  progress = Math.min(100, progress + 15);
+  dailyEarned += earned;
   seconds = 0;
 
   timerMode.textContent = "Goal done";
@@ -453,36 +473,61 @@ function updateBadges() {
 }
 
 function logQuickAction(action) {
-  let label = "";
-  let earned = 0;
+  const actionMap = {
+    water: {
+      label: "Water Walk",
+      earned: 30,
+      icon: "glass-water",
+      message: "You walked to hydrate and break up sitting."
+    },
+    stairs: {
+      label: "Took Stairs",
+      earned: 40,
+      icon: "stairs",
+      message: "You chose stairs instead of lift."
+    },
+    stretch: {
+      label: "Quick Stretch",
+      earned: 25,
+      icon: "person-standing",
+      message: "You completed a short stretch break."
+    },
+    walk: {
+      label: "5-min Walk",
+      earned: 60,
+      icon: "footprints",
+      message: "You added a short walk into your routine."
+    },
+    posture: {
+      label: "Posture Reset",
+      earned: 20,
+      icon: "accessibility",
+      message: "You reset your posture and reduced sitting strain."
+    },
+    buddy: {
+      label: "Buddy Break",
+      earned: 70,
+      icon: "users",
+      message: "You moved with a friend. Social movement bonus!"
+    }
+  };
 
-  if (action === "water") {
-    label = "Water Walk";
-    earned = 30;
-  }
+  const selected = actionMap[action];
 
-  if (action === "stairs") {
-    label = "Took Stairs";
-    earned = 40;
-  }
-
-  if (action === "stretch") {
-    label = "Quick Stretch";
-    earned = 25;
-  }
+  if (!selected) return;
 
   breaks += 1;
-  points += earned;
-  progress = Math.min(100, progress + 8);
+  points += selected.earned;
+  dailyEarned += selected.earned;
 
   setHologram(
     "success",
-    `${label} logged!`,
-    `+${earned} points earned for adding movement into your routine.`,
-    "badge-check"
+    `${selected.label} logged!`,
+    `${selected.message} +${selected.earned} points earned.`,
+    selected.icon
   );
 
-  addHistory(label, `+${earned} points`);
+  addHistory(selected.label, `+${selected.earned} points`);
   updateUI();
 }
 
@@ -498,7 +543,7 @@ function redeemReward(cost, rewardName) {
   }
 
   points -= cost;
-  unlockedRewards.unshift(rewardName);
+  unlockedRewards.unshift(`${rewardName} - redeemed for ${cost} points`);
 
   setHologram(
     "success",
