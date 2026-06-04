@@ -850,3 +850,100 @@ body[data-theme="dark"] .mini-card p {
   background: #e5e7eb;
   color: #64748b;
 }
+
+/* ========================= */
+/* MORE FUNCTIONAL PROGRESS */
+/* ========================= */
+
+.progress-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.progress-details div {
+  background: #f8fafc;
+  border-radius: 18px;
+  padding: 14px;
+  text-align: center;
+}
+
+.progress-details strong {
+  display: block;
+  font-size: 24px;
+  color: var(--blue-dark);
+}
+
+.progress-details span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+/* ========================= */
+/* EXPANDED QUICK ACTIONS */
+/* ========================= */
+
+.quick-actions {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.quick-action {
+  min-height: 82px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.quick-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+/* ========================= */
+/* BETTER REWARD CARDS */
+/* ========================= */
+
+.reward-shop {
+  display: grid;
+  gap: 12px;
+}
+
+.reward-item {
+  min-height: 78px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.reward-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+
+.reward-item p {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.unlocked-item {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+}
+
+/* ========================= */
+/* DARK MODE FIXES FOR NEW PARTS */
+/* ========================= */
+
+body[data-theme="dark"] .progress-details div,
+body[data-theme="dark"] .reward-item,
+body[data-theme="dark"] .unlocked-item,
+body[data-theme="dark"] .history-item,
+body[data-theme="dark"] .steps div,
+body[data-theme="dark"] .reward-list div {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+body[data-theme="dark"] .progress-details strong {
+  color: #93c5fd;
+}
