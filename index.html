@@ -123,48 +123,31 @@
         </div>
       </section>
 
-      <button id="completeGoalBtn" class="complete-btn">
-        <i data-lucide="check-circle-2"></i>
-        Complete Movement Goal
+      <button id="verifyMovementBtn" class="complete-btn" disabled>
+        <i data-lucide="radar"></i>
+        Waiting for Ring Verification
       </button>
 
-      <section class="card quick-actions-card">
-        <h2>Quick Actions</h2>
-        <p class="hint">Log small movement actions instantly and earn points.</p>
+      <section class="card sensor-card">
+        <h2>Ring Sensor Simulation</h2>
+        <p class="hint">
+          For prototype demo only: this simulates the ring detecting real movement.
+          In the actual product, points are awarded only when the ring sensor verifies motion.
+        </p>
       
-        <div class="quick-actions">
-          <button class="quick-action" data-action="water">
-            <i data-lucide="glass-water"></i>
-            Water Walk
-          </button>
-      
-          <button class="quick-action" data-action="stairs">
-            <i data-lucide="stairs"></i>
-            Take Stairs
-          </button>
-      
-          <button class="quick-action" data-action="stretch">
-            <i data-lucide="person-standing"></i>
-            Stretch
-          </button>
-      
-          <button class="quick-action" data-action="walk">
-            <i data-lucide="footprints"></i>
-            5-min Walk
-          </button>
-      
-          <button class="quick-action" data-action="posture">
-            <i data-lucide="accessibility"></i>
-            Posture Reset
-          </button>
-      
-          <button class="quick-action" data-action="buddy">
-            <i data-lucide="users"></i>
-            Buddy Break
-          </button>
+        <div class="sensor-status">
+          <span id="sensorStatusDot" class="sensor-dot idle"></span>
+          <div>
+            <strong id="sensorStatusTitle">No movement required yet</strong>
+            <p id="sensorStatusText">Start the timer and wait for the ring reminder.</p>
+          </div>
         </div>
+      
+        <button id="simulateMovementBtn" class="secondary-wide-btn" disabled>
+          <i data-lucide="activity"></i>
+          Simulate Ring Verified Movement
+        </button>
       </section>
-    </section>
     
     <section id="stats" class="tab-page">
       <section class="card">
