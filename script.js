@@ -4,12 +4,13 @@ let seconds = 0;
 let timer = null;
 
 let breaks = 0;
-let points = 0;              // redeemable wallet points
-let dailyEarned = 0;         // points earned today
-let dailyGoal = 600;         // daily target
+let points = 0;
+let dailyEarned = 0;
+let dailyGoal = 600;
 let progress = 0;
-let streak = 0;              // starts from 0
+let streak = 0;
 let dailyGoalCompleted = false;
+
 let ringConnected = true;
 let battery = 82;
 
@@ -17,15 +18,16 @@ let dndMode = "off";
 let dndTimer = null;
 let dndRemainingSeconds = 0;
 
-let history = [];
-let unlockedRewards = [];
-
 let movementRequired = false;
 let currentVerifiedGoal = "";
 let currentVerifiedPoints = 0;
 
+let history = [];
+let unlockedRewards = [];
+
 const timerDisplay = document.getElementById("timerDisplay");
 const timerMode = document.getElementById("timerMode");
+
 const hologramCard = document.getElementById("hologramCard");
 const hologramTitle = document.getElementById("hologramTitle");
 const hologramText = document.getElementById("hologramText");
@@ -38,10 +40,10 @@ const streakDays = document.getElementById("streakDays");
 const movementBreaks = document.getElementById("movementBreaks");
 const totalPoints = document.getElementById("totalPoints");
 const totalSitting = document.getElementById("totalSitting");
+const currentBadge = document.getElementById("currentBadge");
 
 const progressFill = document.getElementById("progressFill");
 const progressPercent = document.getElementById("progressPercent");
-
 const dailyGoalText = document.getElementById("dailyGoalText");
 const dailyPointsEarned = document.getElementById("dailyPointsEarned");
 const dailyPointsLeft = document.getElementById("dailyPointsLeft");
@@ -53,6 +55,7 @@ const resetDemoBtn = document.getElementById("resetDemoBtn");
 const connectionText = document.getElementById("connectionText");
 const connectionDot = document.getElementById("connectionDot");
 const connectBtn = document.getElementById("connectBtn");
+
 const ringStatusText = document.getElementById("ringStatusText");
 const batteryText = document.getElementById("batteryText");
 const batteryFill = document.getElementById("batteryFill");
@@ -61,6 +64,7 @@ const reminderInput = document.getElementById("reminderInput");
 const goalSelect = document.getElementById("goalSelect");
 
 const themeSelect = document.getElementById("themeSelect");
+
 const dndSelect = document.getElementById("dndSelect");
 const dndDuration = document.getElementById("dndDuration");
 const dndBtn = document.getElementById("dndBtn");
@@ -84,83 +88,7 @@ function formatTime(totalSeconds) {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-function updateUI() {
-  timerDisplay.textContent = formatTime(seconds);
-
-  breaksToday.textContent = breaks;
-  pointsToday.textContent = points;
-  movementBreaks.textContent = breaks;
-  totalPoints.textContent = points;
-  totalSitting.textContent = `${Math.floor(seconds / 60)} min`;
-
-  if (streakDays) {
-    streakDays.textContent = streak;
-  }
-
-  progress = Math.min(100, Math.round((dailyEarned / dailyGoal) * 100));
-  
-  progressFill.style.width = `${progress}%`;
-  progressPercent.textContent = `${progress}%`;
-  
-  if (dailyGoalText) {
-    dailyGoalText.textContent = `Daily goal: earn ${dailyGoal} movement points today.`;
-  }
-  
-  if (dailyPointsEarned) {
-    dailyPointsEarned.textContent = dailyEarned;
-  }
-  
-  if (dailyPointsLeft) {
-    dailyPointsLeft.textContent = Math.max(0, dailyGoal - dailyEarned);
-  }
-
-  batteryText.textContent = ringConnected ? `${battery}%` : "--";
-  batteryFill.style.width = ringConnected ? `${battery}%` : "0%";
-
-  connectionText.textContent = ringConnected ? "Ring Connected" : "Ring Disconnected";
-  connectBtn.textContent = ringConnected ? "Disconnect" : "Connect";
-
-  ringStatusText.textContent = ringConnected
-    ? `Ring is connected. Current mode: ${getModeLabel()}`
-    : "Ring is disconnected. Connect to start monitoring.";
-
-  connectionDot.classList.toggle("off", !ringConnected);
-
-  if (rewardPointsDisplay) {
-    rewardPointsDisplay.textContent = `${points} points`;
-  }
-
-  if (verifyMovementBtn) {
-  verifyMovementBtn.disabled = !movementRequired;
-  verifyMovementBtn.innerHTML = movementRequired
-    ? `<i data-lucide="radar"></i> Ring Waiting for Movement`
-    : `<i data-lucide="radar"></i> Waiting for Ring Verification`;
-}
-
-if (simulateMovementBtn) {
-  simulateMovementBtn.disabled = !movementRequired;
-}
-
-if (sensorStatusTitle && sensorStatusText && sensorStatusDot) {
-  if (movementRequired) {
-    sensorStatusTitle.textContent = "Movement required";
-    sensorStatusText.textContent = `Ring is checking for: ${currentVerifiedGoal}`;
-    sensorStatusDot.className = "sensor-dot active";
-  } else {
-    sensorStatusTitle.textContent = "No movement required yet";
-    sensorStatusText.textContent = "Start the timer and wait for the ring reminder.";
-    sensorStatusDot.className = "sensor-dot idle";
-  }
-}
-
-  updateDndText();
-  updateHistory();
-  updateBadges();
-  updateRewards();
-}
-
 function getModeLabel() {
-  if (dndMode === "off") return "Normal";
   if (dndMode === "class") return "Class Mode";
   if (dndMode === "exam") return "Exam Mode";
   if (dndMode === "focus") return "Focus Mode";
@@ -171,8 +99,68 @@ function setHologram(state, title, text, iconName) {
   hologramCard.className = `hologram-card ${state}`;
   hologramTitle.textContent = title;
   hologramText.textContent = text;
-
   hologramIcon.setAttribute("data-lucide", iconName);
+  lucide.createIcons();
+}
+
+function updateUI() {
+  timerDisplay.textContent = formatTime(seconds);
+
+  breaksToday.textContent = breaks;
+  pointsToday.textContent = points;
+  streakDays.textContent = streak;
+
+  movementBreaks.textContent = breaks;
+  totalPoints.textContent = points;
+  totalSitting.textContent = `${Math.floor(seconds / 60)} min`;
+
+  progress = Math.min(100, Math.round((dailyEarned / dailyGoal) * 100));
+  progressFill.style.width = `${progress}%`;
+  progressPercent.textContent = `${progress}%`;
+
+  dailyGoalText.textContent = `Daily goal: earn ${dailyGoal} verified movement points today.`;
+  dailyPointsEarned.textContent = dailyEarned;
+  dailyPointsLeft.textContent = Math.max(0, dailyGoal - dailyEarned);
+
+  connectionText.textContent = ringConnected ? "Ring Connected" : "Ring Disconnected";
+  connectBtn.textContent = ringConnected ? "Disconnect" : "Connect";
+  connectionDot.classList.toggle("off", !ringConnected);
+
+  ringStatusText.textContent = ringConnected
+    ? `Ring is connected. Current mode: ${getModeLabel()}.`
+    : "Ring is disconnected. Connect to start monitoring.";
+
+  batteryText.textContent = ringConnected ? `${battery}%` : "--";
+  batteryFill.style.width = ringConnected ? `${battery}%` : "0%";
+
+  rewardPointsDisplay.textContent = `${points} points`;
+
+  if (verifyMovementBtn) {
+    verifyMovementBtn.disabled = !movementRequired;
+    verifyMovementBtn.innerHTML = movementRequired
+      ? `<i data-lucide="radar"></i> Ring Waiting for Movement`
+      : `<i data-lucide="radar"></i> Waiting for Ring Verification`;
+  }
+
+  if (simulateMovementBtn) {
+    simulateMovementBtn.disabled = !movementRequired;
+  }
+
+  if (movementRequired) {
+    sensorStatusTitle.textContent = "Movement required";
+    sensorStatusText.textContent = `Ring is checking for: ${currentVerifiedGoal}`;
+    sensorStatusDot.className = "sensor-dot active";
+  } else {
+    sensorStatusTitle.textContent = "No movement required yet";
+    sensorStatusText.textContent = "Start the timer and wait for the ring reminder.";
+    sensorStatusDot.className = "sensor-dot idle";
+  }
+
+  updateDndText();
+  updateHistory();
+  updateBadges();
+  updateRewards();
+  updateCurrentBadge();
   lucide.createIcons();
 }
 
@@ -194,7 +182,7 @@ function startTimer() {
   setHologram(
     "idle",
     "Monitoring started",
-    `The ring is checking for prolonged sitting. Mode: ${getModeLabel()}`,
+    `The ring is checking for prolonged sitting. Mode: ${getModeLabel()}.`,
     "radar"
   );
 
@@ -205,14 +193,14 @@ function startTimer() {
       battery -= 1;
     }
 
-    updateUI();
-
     const reminderMinutes = Number(reminderInput.value);
     const reminderSeconds = reminderMinutes * 60;
 
     if (seconds >= reminderSeconds) {
       triggerReminder();
     }
+
+    updateUI();
   }, 1000);
 }
 
@@ -226,6 +214,9 @@ function resetTimer() {
   clearInterval(timer);
   timer = null;
   seconds = 0;
+  movementRequired = false;
+  currentVerifiedGoal = "";
+  currentVerifiedPoints = 0;
   timerMode.textContent = "Ready";
 
   setHologram(
@@ -243,19 +234,17 @@ function triggerReminder() {
   timer = null;
 
   const goal = goalSelect.value;
-
   currentVerifiedGoal = goal;
   currentVerifiedPoints = calculatePoints();
 
   if (dndMode === "exam") {
-    timerMode.textContent = "DND active";
-
     movementRequired = false;
+    timerMode.textContent = "DND active";
 
     setHologram(
       "idle",
       "Exam Mode active",
-      "Reminder was muted to avoid interrupting your exam. Movement can be completed later.",
+      "No prompts or vibrations. Reminder muted to avoid interrupting your exam.",
       "moon"
     );
 
@@ -272,11 +261,11 @@ function triggerReminder() {
     setHologram(
       "active",
       "Silent hologram",
-      `Class Mode: No vibration. Ring is waiting to verify: ${goal}`,
+      `Class Mode: No vibration. Ring is waiting to verify: ${goal}.`,
       "projector"
     );
 
-    addHistory("Silent reminder", "Class Mode");
+    addHistory("Silent hologram shown", goal);
     updateUI();
     return;
   }
@@ -287,11 +276,11 @@ function triggerReminder() {
     setHologram(
       "active",
       "Soft reminder",
-      `Focus Mode: Complete when ready. Ring is waiting to verify: ${goal}`,
+      `Focus Mode: Complete when ready. Ring is waiting to verify: ${goal}.`,
       "sparkles"
     );
 
-    addHistory("Soft reminder", "Focus Mode");
+    addHistory("Soft reminder shown", goal);
     updateUI();
     return;
   }
@@ -305,12 +294,18 @@ function triggerReminder() {
   setHologram(
     "active",
     "Time to move!",
-    `You've been sitting for too long. Hologram task: ${goal}. Points are awarded only after ring verification.`,
+    `Hologram task: ${goal}. Points are awarded only after ring verification.`,
     "projector"
   );
 
   addHistory("Hologram task shown", goal);
   updateUI();
+}
+
+function calculatePoints() {
+  if (dndMode === "class") return 80;
+  if (dndMode === "focus") return 90;
+  return 100;
 }
 
 function addMovementPoints(earned) {
@@ -324,13 +319,14 @@ function addMovementPoints(earned) {
     setHologram(
       "success",
       "Daily goal completed!",
-      `You reached ${dailyGoal} movement points today. Your streak is now ${streak} day(s)!`,
+      `You reached ${dailyGoal} points today. Your streak is now ${streak} day(s)!`,
       "flame"
     );
 
     addHistory("Daily goal completed", `Streak: ${streak} day(s)`);
   }
 }
+
 function verifyMovementFromRing() {
   if (!ringConnected) {
     setHologram(
@@ -363,24 +359,26 @@ function verifyMovementFromRing() {
 
   setHologram(
     "success",
-    "Movement verified!",
-    `The ring detected movement for: ${currentVerifiedGoal}. +${earned} points earned.`,
+    "Goal accomplished!",
+    `Ring verified: ${currentVerifiedGoal}. +${earned} points earned.`,
     "badge-check"
   );
 
   addHistory("Ring verified movement", `${currentVerifiedGoal} · +${earned} points`);
 
+  setTimeout(() => {
+    setHologram(
+      "powerdown",
+      "Powering down...",
+      "See you next time. Hologram will activate again when needed.",
+      "power"
+    );
+  }, 1800);
+
   currentVerifiedGoal = "";
   currentVerifiedPoints = 0;
 
   updateUI();
-}
-
-function calculatePoints() {
-  if (dndMode === "class") return 80;
-  if (dndMode === "focus") return 90;
-  if (dndMode === "exam") return 50;
-  return 100;
 }
 
 function toggleConnection() {
@@ -389,6 +387,7 @@ function toggleConnection() {
   if (!ringConnected) {
     clearInterval(timer);
     timer = null;
+    movementRequired = false;
     timerMode.textContent = "Offline";
 
     setHologram(
@@ -413,12 +412,10 @@ function toggleConnection() {
 
 function activateDnd() {
   dndMode = dndSelect.value;
-
   clearInterval(dndTimer);
 
   if (dndMode === "off") {
     dndRemainingSeconds = 0;
-    hologramCard.classList.remove("dnd-active-card");
 
     setHologram(
       "idle",
@@ -432,7 +429,6 @@ function activateDnd() {
   }
 
   dndRemainingSeconds = Number(dndDuration.value) * 60;
-  hologramCard.classList.add("dnd-active-card");
 
   setHologram(
     "idle",
@@ -448,8 +444,6 @@ function activateDnd() {
       dndMode = "off";
       dndSelect.value = "off";
       clearInterval(dndTimer);
-
-      hologramCard.classList.remove("dnd-active-card");
 
       setHologram(
         "idle",
@@ -482,8 +476,6 @@ function getDndDescription() {
 }
 
 function updateDndText() {
-  if (!dndStatusText) return;
-
   if (dndMode === "off") {
     dndStatusText.textContent = "DND is currently off.";
     return;
@@ -499,11 +491,7 @@ function addHistory(action, detail) {
     minute: "2-digit"
   });
 
-  history.unshift({
-    action,
-    detail,
-    time
-  });
+  history.unshift({ action, detail, time });
 
   if (history.length > 6) {
     history.pop();
@@ -511,16 +499,13 @@ function addHistory(action, detail) {
 }
 
 function updateHistory() {
-  if (!historyList) return;
-
   if (history.length === 0) {
-    historyList.innerHTML = `<p class="hint">No movement breaks logged yet.</p>`;
+    historyList.innerHTML = `<p class="hint">No verified movement yet.</p>`;
     return;
   }
 
   historyList.innerHTML = history
-    .map(
-      item => `
+    .map(item => `
       <div class="history-item">
         <div>
           ${item.action}
@@ -529,25 +514,34 @@ function updateHistory() {
         </div>
         <span>${item.time}</span>
       </div>
-    `
-    )
+    `)
     .join("");
 }
 
 function updateBadges() {
-  if (!badgeList) return;
-
   const firstMoveClass = breaks >= 1 ? "badge" : "badge locked";
   const threeBreaksClass = breaks >= 3 ? "badge" : "badge locked";
   const pointsClass = points >= 500 ? "badge" : "badge locked";
-  const focusClass = points >= 300 ? "badge" : "badge locked";
+  const focusClass = dailyEarned >= 300 ? "badge" : "badge locked";
 
   badgeList.innerHTML = `
-    <div class="${firstMoveClass}">🌱 First Move</div>
-    <div class="${threeBreaksClass}">🔥 3 Breaks</div>
-    <div class="${focusClass}">🧠 Focus Builder</div>
+    <div class="${firstMoveClass}">🌱 First Verified Move</div>
+    <div class="${threeBreaksClass}">🔥 3 Verified Breaks</div>
     <div class="${pointsClass}">⭐ 500 Points</div>
+    <div class="${focusClass}">🧠 Focus Builder</div>
   `;
+}
+
+function updateCurrentBadge() {
+  if (points >= 1000) {
+    currentBadge.textContent = "Active Pro";
+  } else if (points >= 500) {
+    currentBadge.textContent = "Focus Builder";
+  } else if (breaks >= 1) {
+    currentBadge.textContent = "First Move";
+  } else {
+    currentBadge.textContent = "Starter";
+  }
 }
 
 function redeemReward(cost, rewardName) {
@@ -576,8 +570,6 @@ function redeemReward(cost, rewardName) {
 }
 
 function updateRewards() {
-  if (!unlockedRewardsBox) return;
-
   if (unlockedRewards.length === 0) {
     unlockedRewardsBox.innerHTML = `<p class="hint">No rewards redeemed yet.</p>`;
     return;
@@ -590,11 +582,9 @@ function updateRewards() {
 
 function changeTheme() {
   const theme = themeSelect.value;
-
   document.body.setAttribute("data-theme", theme);
   document.documentElement.setAttribute("data-theme", theme);
-
-  localStorage.setItem("moveRingTheme", theme);
+  localStorage.setItem("holoRingTheme", theme);
 
   setHologram(
     "idle",
@@ -605,7 +595,7 @@ function changeTheme() {
 }
 
 function loadSavedTheme() {
-  const savedTheme = localStorage.getItem("moveRingTheme") || "ocean";
+  const savedTheme = localStorage.getItem("holoRingTheme") || "ocean";
 
   document.body.setAttribute("data-theme", savedTheme);
   document.documentElement.setAttribute("data-theme", savedTheme);
@@ -651,6 +641,9 @@ function resetDemoProgress() {
   progress = 0;
   streak = 0;
   dailyGoalCompleted = false;
+  movementRequired = false;
+  currentVerifiedGoal = "";
+  currentVerifiedPoints = "";
   history = [];
   unlockedRewards = [];
 
@@ -659,40 +652,32 @@ function resetDemoProgress() {
   setHologram(
     "idle",
     "Demo progress reset",
-    "Points, streak, breaks, rewards, and progress have been reset to 0.",
+    "Points, streak, verified breaks, rewards, and progress have been reset to 0.",
     "rotate-ccw"
   );
 
   updateUI();
 }
 
-document.querySelectorAll(".tab").forEach((tab) => {
+document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-    document.querySelectorAll(".tab-page").forEach((p) => p.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-page").forEach(p => p.classList.remove("active"));
 
     tab.classList.add("active");
-
-    const pageId = tab.dataset.tab;
-    document.getElementById(pageId).classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
 
     lucide.createIcons();
   });
 });
 
-document.getElementById("startBtn").addEventListener("click", startTimer);
-document.getElementById("pauseBtn").addEventListener("click", pauseTimer);
-document.getElementById("resetBtn").addEventListener("click", resetTimer);
-
-if (simulateMovementBtn) {
-  simulateMovementBtn.addEventListener("click", verifyMovementFromRing);
-}
-
-if (verifyMovementBtn) {
-  verifyMovementBtn.addEventListener("click", verifyMovementFromRing);
-}
-
+startBtn.addEventListener("click", startTimer);
+pauseBtn.addEventListener("click", pauseTimer);
+resetBtn.addEventListener("click", resetTimer);
 connectBtn.addEventListener("click", toggleConnection);
+
+verifyMovementBtn.addEventListener("click", verifyMovementFromRing);
+simulateMovementBtn.addEventListener("click", verifyMovementFromRing);
 
 document.querySelectorAll(".reward-item").forEach(button => {
   button.addEventListener("click", () => {
@@ -702,21 +687,10 @@ document.querySelectorAll(".reward-item").forEach(button => {
   });
 });
 
-if (themeSelect) {
-  themeSelect.addEventListener("change", changeTheme);
-}
-
-if (dndBtn) {
-  dndBtn.addEventListener("click", activateDnd);
-}
-
-if (saveGoalBtn) {
-  saveGoalBtn.addEventListener("click", saveDailyGoal);
-}
-
-if (resetDemoBtn) {
-  resetDemoBtn.addEventListener("click", resetDemoProgress);
-}
+themeSelect.addEventListener("change", changeTheme);
+dndBtn.addEventListener("click", activateDnd);
+saveGoalBtn.addEventListener("click", saveDailyGoal);
+resetDemoBtn.addEventListener("click", resetDemoProgress);
 
 loadSavedTheme();
 updateUI();
