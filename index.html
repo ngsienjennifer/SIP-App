@@ -4,19 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Move Ring App</title>
+  <title>Holo Ring App</title>
 
   <link rel="stylesheet" href="style.css" />
-
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
-<body>
+<body data-theme="ocean">
   <main class="phone">
+
+    <!-- HEADER -->
     <section class="hero">
       <div>
-        <p class="eyebrow">HoloMove Prototype</p>
-        <h1>Move Ring</h1>
+        <p class="eyebrow">HoloRing Prototype</p>
+        <h1>Holo Ring</h1>
         <p class="subtitle">Detect. Prompt. Move. Achieve.</p>
       </div>
 
@@ -25,6 +26,7 @@
       </div>
     </section>
 
+    <!-- CONNECTION -->
     <section class="connection-card">
       <div class="connection-left">
         <span id="connectionDot" class="connection-dot"></span>
@@ -37,6 +39,7 @@
       <button id="connectBtn" class="pill-btn">Disconnect</button>
     </section>
 
+    <!-- TABS -->
     <nav class="tabs">
       <button class="tab active" data-tab="home">
         <i data-lucide="home"></i>
@@ -53,15 +56,21 @@
         Ring
       </button>
 
+      <button class="tab" data-tab="rewards">
+        <i data-lucide="gift"></i>
+        Rewards
+      </button>
+
       <button class="tab" data-tab="settings">
         <i data-lucide="settings"></i>
         Settings
       </button>
     </nav>
 
+    <!-- HOME -->
     <section id="home" class="tab-page active">
-      <div id="hologramCard" class="hologram-card idle">
-        <div class="hologram-glow"></div>
+      <section id="hologramCard" class="hologram-card idle">
+        <div class="hologram-beam"></div>
 
         <div class="hologram-content">
           <i id="hologramIcon" data-lucide="sparkles"></i>
@@ -70,7 +79,7 @@
             Start a study session. The ring will prompt you after long sitting.
           </p>
         </div>
-      </div>
+      </section>
 
       <section class="card timer-card">
         <div class="card-title-row">
@@ -102,7 +111,7 @@
         <div class="mini-card">
           <i data-lucide="footprints"></i>
           <h3 id="breaksToday">0</h3>
-          <p>Breaks</p>
+          <p>Verified Breaks</p>
         </div>
 
         <div class="mini-card">
@@ -113,31 +122,84 @@
 
         <div class="mini-card">
           <i data-lucide="flame"></i>
-          <h3 id="streakDays">7</h3>
+          <h3 id="streakDays">0</h3>
           <p>Streak</p>
         </div>
       </section>
 
-      <button id="completeGoalBtn" class="complete-btn">
-        <i data-lucide="check-circle-2"></i>
-        Complete Movement Goal
+      <button id="verifyMovementBtn" class="complete-btn" disabled>
+        <i data-lucide="radar"></i>
+        Waiting for Ring Verification
       </button>
+
+      <section class="card sensor-card">
+        <h2>Ring Sensor Simulation</h2>
+        <p class="hint">
+          Prototype demo: the real ring would use motion sensors to verify that the user completed the hologram movement task.
+        </p>
+
+        <section class="card sensor-card">
+          <h2>Auto Activity Tracking</h2>
+          <p class="hint">
+            The ring passively tracks movement during the day, such as walking between classes or moving around campus. Points are added based on detected movement within a time period and are capped to prevent reward farming.
+          </p>
+        
+          <div class="sensor-status">
+            <span id="activityStatusDot" class="sensor-dot idle"></span>
+            <div>
+              <strong id="activityStatusTitle">Passive tracking active</strong>
+              <p id="activityStatusText">Ring is monitoring daily movement in the background.</p>
+            </div>
+          </div>
+        
+          <button id="simulatePassiveActivityBtn" class="secondary-wide-btn">
+            <i data-lucide="footprints"></i>
+            Demo: Simulate 30-min Passive Tracking
+          </button>
+        </section>
+
+        <div class="sensor-status">
+          <span id="sensorStatusDot" class="sensor-dot idle"></span>
+          <div>
+            <strong id="sensorStatusTitle">No movement required yet</strong>
+            <p id="sensorStatusText">Start the timer and wait for the ring reminder.</p>
+          </div>
+        </div>
+
+        <button id="simulateMovementBtn" class="secondary-wide-btn" disabled>
+          <i data-lucide="activity"></i>
+          Simulate Ring Verified Movement
+        </button>
+      </section>
     </section>
 
+    <!-- STATS -->
     <section id="stats" class="tab-page">
       <section class="card">
         <div class="card-title-row">
           <h2>Today’s Progress</h2>
-          <span id="progressPercent">35%</span>
+          <span id="progressPercent">0%</span>
         </div>
 
         <div class="progress-shell">
           <div id="progressFill" class="progress-fill"></div>
         </div>
 
-        <p class="hint">
-          Progress increases when you complete movement goals after long sitting.
+        <p class="hint" id="dailyGoalText">
+          Daily goal: earn 600 verified movement points today.
         </p>
+
+        <div class="progress-details">
+          <div>
+            <strong id="dailyPointsEarned">0</strong>
+            <span>earned today</span>
+          </div>
+
+          <div>
+            <strong id="dailyPointsLeft">600</strong>
+            <span>points left</span>
+          </div>
+        </div>
       </section>
 
       <section class="grid-2">
@@ -148,33 +210,50 @@
         </div>
 
         <div class="card stat-card">
+          <i data-lucide="activity"></i>
+          <h3 id="movementBreaks">0</h3>
+          <p>Verified breaks</p>
+        </div>
+
+        <div class="card stat-card">
           <i data-lucide="trophy"></i>
           <h3 id="totalPoints">0</h3>
           <p>Total points</p>
         </div>
 
         <div class="card stat-card">
-          <i data-lucide="activity"></i>
-          <h3 id="movementBreaks">0</h3>
-          <p>Movement breaks</p>
-        </div>
-
-        <div class="card stat-card">
           <i data-lucide="badge-check"></i>
-          <h3>Focus Pro</h3>
+          <h3 id="currentBadge">Starter</h3>
           <p>Current badge</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Recent Ring Activity</h2>
+        <div id="historyList" class="history-list">
+          <p class="hint">No verified movement yet.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Badges</h2>
+        <div id="badgeList" class="badge-list">
+          <div class="badge locked">🌱 First Verified Move</div>
+          <div class="badge locked">🔥 3 Verified Breaks</div>
+          <div class="badge locked">⭐ 500 Points</div>
+          <div class="badge locked">🧠 Focus Builder</div>
         </div>
       </section>
 
       <section class="card insight-card">
         <h2>Insight</h2>
         <p>
-          You tend to sit longest during study sessions. Try setting reminders
-          every 45–60 minutes and using short goals like stretching or walking.
+          The app does not rely on manual activity logging. Points are only awarded after the ring verifies movement.
         </p>
       </section>
     </section>
 
+    <!-- RING -->
     <section id="ring" class="tab-page">
       <section class="ring-showcase card">
         <div class="big-ring">
@@ -182,7 +261,7 @@
           <span class="ring-light"></span>
         </div>
 
-        <h2>Move Ring Status</h2>
+        <h2>Holo Ring Status</h2>
         <p id="ringStatusText">
           Your ring is connected and ready to detect inactivity.
         </p>
@@ -210,27 +289,127 @@
 
           <div>
             <span>2</span>
-            <p>Gentle vibration prompt</p>
+            <p>Ring sends a subtle vibration prompt</p>
           </div>
 
           <div>
             <span>3</span>
-            <p>Hologram appears from the ring</p>
+            <p>Hologram activates with a movement task</p>
           </div>
 
           <div>
             <span>4</span>
-            <p>User completes movement goal</p>
+            <p>Ring verifies that movement was completed</p>
           </div>
 
           <div>
             <span>5</span>
-            <p>Projection powers down</p>
+            <p>Goal achieved hologram appears and powers down</p>
           </div>
+        </div>
+      </section>
+
+      <section class="card feature-card">
+        <h2>Ring Features</h2>
+
+        <div class="feature-grid">
+          <div><i data-lucide="target"></i><p>Custom Goals</p></div>
+          <div><i data-lucide="bell"></i><p>Smart Reminders</p></div>
+          <div><i data-lucide="bar-chart-3"></i><p>Activity Analytics</p></div>
+          <div><i data-lucide="droplets"></i><p>Water Resistant</p></div>
+          <div><i data-lucide="battery-medium"></i><p>Up to 5 Days Battery</p></div>
+          <div><i data-lucide="projector"></i><p>Hologram Prompt</p></div>
         </div>
       </section>
     </section>
 
+    <!-- REWARDS -->
+    <section id="rewards" class="tab-page">
+      <section class="card reward-hero">
+        <div>
+          <p class="eyebrow-dark">Reward Wallet</p>
+          <h2 id="rewardPointsDisplay">0 points</h2>
+          <p class="hint">Redeem rewards using verified movement points.</p>
+        </div>
+
+        <div class="reward-coin">
+          <i data-lucide="star"></i>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2>Redeem Rewards</h2>
+          <span>Prototype</span>
+        </div>
+
+        <div class="reward-shop">
+          <button class="reward-item" data-cost="400" data-name="$2 Campus Drink Voucher">
+            <i data-lucide="coffee"></i>
+            <div>
+              <strong>$2 Campus Drink Voucher</strong>
+              <p>400 points · Small wellness reward</p>
+            </div>
+          </button>
+
+          <button class="reward-item" data-cost="650" data-name="Healthy Meal Discount">
+            <i data-lucide="salad"></i>
+            <div>
+              <strong>Healthy Meal Discount</strong>
+              <p>650 points · Encourages better habits</p>
+            </div>
+          </button>
+
+          <button class="reward-item" data-cost="1200" data-name="Sports Bottle / Towel Reward">
+            <i data-lucide="gift"></i>
+            <div>
+              <strong>Sports Bottle / Towel Reward</strong>
+              <p>1200 points · Active lifestyle item</p>
+            </div>
+          </button>
+
+          <button class="reward-item" data-cost="1800" data-name="Lululemon Discount Voucher">
+            <i data-lucide="shopping-bag"></i>
+            <div>
+              <strong>Lululemon Discount Voucher</strong>
+              <p>1800 points · Example activewear incentive</p>
+            </div>
+          </button>
+
+          <button class="reward-item" data-cost="2500" data-name="1-Month Gym Membership Discount">
+            <i data-lucide="dumbbell"></i>
+            <div>
+              <strong>1-Month Gym Membership Discount</strong>
+              <p>2500 points · Encourages continued activity</p>
+            </div>
+          </button>
+
+          <button class="reward-item" data-cost="3200" data-name="Active Lifestyle Bundle">
+            <i data-lucide="ticket-percent"></i>
+            <div>
+              <strong>Active Lifestyle Bundle</strong>
+              <p>3200 points · Fitness gear / wellness bundle</p>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Unlocked Rewards</h2>
+        <div id="unlockedRewards" class="unlocked-list">
+          <p class="hint">No rewards redeemed yet.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Reward Note</h2>
+        <p class="hint">
+          Brand names are example partners only. In a real version, rewards could be campus vouchers, gym discounts, healthy meal perks, or fitness gear discounts.
+        </p>
+      </section>
+    </section>
+
+    <!-- SETTINGS -->
     <section id="settings" class="tab-page">
       <section class="card">
         <h2>Reminder Settings</h2>
@@ -242,7 +421,7 @@
         </label>
 
         <label>
-          Movement goal
+          Hologram movement task
           <select id="goalSelect">
             <option>Stretch for 2 minutes</option>
             <option>Walk 100 steps</option>
@@ -251,6 +430,22 @@
             <option>Shoulder roll + posture reset</option>
           </select>
         </label>
+
+        <label>
+          Daily verified points goal
+          <input id="dailyGoalInput" type="number" min="100" max="5000" value="600" />
+          <small>points per day</small>
+        </label>
+
+        <button id="saveGoalBtn" class="complete-btn">
+          <i data-lucide="target"></i>
+          Save Daily Goal
+        </button>
+
+        <button id="resetDemoBtn" class="complete-btn">
+          <i data-lucide="rotate-ccw"></i>
+          Reset Demo Progress
+        </button>
 
         <label>
           Vibration strength
@@ -263,22 +458,79 @@
       </section>
 
       <section class="card">
-        <h2>Reward System</h2>
+        <h2>Theme</h2>
 
-        <div class="reward-list">
+        <label>
+          App theme
+          <select id="themeSelect">
+            <option value="ocean">Ocean Blue</option>
+            <option value="mint">Mint Green</option>
+            <option value="sakura">Sakura Pink</option>
+            <option value="dark">Dark Mode</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card dnd-card">
+        <h2>Do Not Disturb Mode</h2>
+        <p class="hint">
+          The ring can reduce or mute hologram prompts during classes, exams, or focus time.
+        </p>
+
+        <label>
+          DND mode
+          <select id="dndSelect">
+            <option value="off">Off - Normal reminders</option>
+            <option value="class">Class Mode - Silent hologram only</option>
+            <option value="exam">Exam Mode - No interruption</option>
+            <option value="focus">Focus Mode - Softer reminders</option>
+          </select>
+        </label>
+
+        <label>
+          DND duration
+          <select id="dndDuration">
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="120">2 hours</option>
+          </select>
+        </label>
+
+        <button id="dndBtn" class="complete-btn">
+          <i data-lucide="moon"></i>
+          Activate DND
+        </button>
+
+        <p class="hint" id="dndStatusText">
+          DND is currently off.
+        </p>
+      </section>
+
+      <section class="card calendar-card">
+        <h2>Calendar Sync Demo</h2>
+        <p class="hint">Upcoming events can automatically activate DND.</p>
+
+        <div class="calendar-event">
+          <i data-lucide="calendar"></i>
           <div>
-            <i data-lucide="gift"></i>
-            <p>Earn points after movement goals</p>
+            <strong>Team Stand-up</strong>
+            <p>9:00 AM – 9:30 AM · Class Mode</p>
           </div>
+        </div>
 
+        <div class="calendar-event">
+          <i data-lucide="presentation"></i>
           <div>
-            <i data-lucide="award"></i>
-            <p>Unlock badges and streaks</p>
+            <strong>Client Presentation</strong>
+            <p>11:00 AM – 12:00 PM · Focus Mode</p>
           </div>
+        </div>
 
+        <div class="calendar-event">
+          <i data-lucide="book-open-check"></i>
           <div>
-            <i data-lucide="users"></i>
-            <p>Future idea: compete with friends</p>
+            <strong>Exam Block</strong>
+            <p>2:00 PM – 4:00 PM · Exam Mode</p>
           </div>
         </div>
       </section>
