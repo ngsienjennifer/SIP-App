@@ -105,7 +105,7 @@ function getModeLabel() {
 }
 
 function setHologram(state, title, text, iconName) {
-  hologramCard.className = `hologram-card ${state}`;
+  hologramCard.className = `hologram-card ${state} qr-scanner-btn`;
   hologramTitle.textContent = title;
   hologramText.textContent = text;
   hologramIcon.setAttribute("data-lucide", iconName);
@@ -242,9 +242,9 @@ function resetTimer() {
 
   setHologram(
     "idle",
-    "Hologram inactive",
-    "Start a study session. The ring will prompt you after long sitting.",
-    "sparkles"
+    "Scan Area QR",
+    "Tap here to scan a QR code at your desk or study area.",
+    "qr-code"
   );
 
   updateUI();
@@ -281,9 +281,9 @@ function triggerReminder() {
 
     setHologram(
       "active",
-      "Silent hologram",
-      `Class Mode: No vibration. Ring is waiting to verify: ${goal}.`,
-      "projector"
+      "Class Mode: Break Pending",
+      `Tap to scan a QR code to verify task: ${goal}`,
+      "qr-code"
     );
 
     addHistory("Silent hologram shown", goal);
@@ -315,8 +315,8 @@ function triggerReminder() {
   setHologram(
     "active",
     "Time to move!",
-    `Hologram task: ${goal}. Points are awarded only after ring verification.`,
-    "projector"
+    `Task: ${goal}. Walk and tap here to scan an Area QR to verify!`,
+    "qr-code"
   );
 
   addHistory("Hologram task shown", goal);
@@ -416,13 +416,16 @@ function verifyMovementFromRing() {
   addHistory("Ring verified movement", `${currentVerifiedGoal} · +${earned} points`);
 
   setTimeout(() => {
-    setHologram(
-      "powerdown",
-      "Powering down...",
-      "See you next time. Hologram will activate again when needed.",
-      "power"
-    );
-  }, 1800);
+    if (!movementRequired) {
+      setHologram(
+        "idle",
+        "Scan Area QR",
+        "Tap here to scan a QR code at your desk or study area.",
+        "qr-code"
+      );
+      updateUI();
+    }
+  }, 3500);
 
   currentVerifiedGoal = "";
   currentVerifiedPoints = 0;
@@ -523,9 +526,9 @@ function toggleConnection() {
 
     setHologram(
       "idle",
-      "Ring connected",
-      "Haptic reminder and hologram projection are ready.",
-      "sparkles"
+      "Scan Area QR",
+      "Tap here to scan a QR code at your desk or study area.",
+      "qr-code"
     );
   }
 
@@ -541,9 +544,9 @@ function activateDnd() {
 
     setHologram(
       "idle",
-      "DND off",
-      "Normal reminders are active again.",
-      "bell"
+      "Scan Area QR",
+      "Tap here to scan a QR code at your desk or study area.",
+      "qr-code"
     );
 
     updateUI();
@@ -786,6 +789,64 @@ function resetDemoProgress() {
   );
 
   updateUI();
+}
+
+// Add the interactive on-tap QR scanner action
+if (hologramCard) {
+  hologramCard.addEventListener("click", () => {
+    const campusAreas = [
+      "Library Silent Zone - Desk 42",
+      "Campus Gym - Active Zone",
+      "Student Union - Table 12",
+      "Engineering Lab - Bench B",
+      "Outdoor Park Bench - Zone C"
+    ];
+    const randomArea = campusAreas[Math.floor(Math.random() * campusAreas.length)];
+
+    if (movementRequired) {
+      const earned = currentVerifiedPoints || 20;
+      breaks += 1;
+      addMovementPoints(earned);
+      seconds = 0;
+      movementRequired = false;
+      timerMode.textContent = "Verified";
+
+      setHologram(
+        "success",
+        "Break Verified!",
+        `Scanned at ${randomArea}. +${earned} points earned!`,
+        "badge-check"
+      );
+
+      addHistory("Area QR Verified Break", `${randomArea} · +${earned} points`);
+    } else {
+      const scanPoints = 10;
+      addMovementPoints(scanPoints);
+      
+      setHologram(
+        "success",
+        "Location Synced!",
+        `Successfully scanned at: ${randomArea}. +${scanPoints} points earned!`,
+        "map-pin"
+      );
+      
+      addHistory("Area QR Scanned", `Checked in at ${randomArea} · +${scanPoints} points`);
+    }
+
+    updateUI();
+
+    setTimeout(() => {
+      if (!movementRequired) {
+        setHologram(
+          "idle",
+          "Scan Area QR",
+          "Tap here to scan a QR code at your desk or study area.",
+          "qr-code"
+        );
+        updateUI();
+      }
+    }, 3500);
+  });
 }
 
 document.querySelectorAll(".tab").forEach(tab => {

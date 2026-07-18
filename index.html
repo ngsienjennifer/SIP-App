@@ -69,17 +69,18 @@
 
     <!-- HOME -->
     <section id="home" class="tab-page active">
-      <section id="hologramCard" class="hologram-card idle">
+      <!-- QR Scanner Button (Replaces Hologram Card) -->
+      <button id="hologramCard" class="hologram-card idle qr-scanner-btn">
         <div class="hologram-beam"></div>
 
         <div class="hologram-content">
-          <i id="hologramIcon" data-lucide="sparkles"></i>
-          <h2 id="hologramTitle">Hologram inactive</h2>
+          <i id="hologramIcon" data-lucide="qr-code"></i>
+          <h2 id="hologramTitle">Scan Area QR</h2>
           <p id="hologramText">
-            Start a study session. The ring will prompt you after long sitting.
+            Tap here to scan a QR code at your desk or study area.
           </p>
         </div>
-      </section>
+      </button>
 
       <section class="card timer-card">
         <div class="card-title-row">

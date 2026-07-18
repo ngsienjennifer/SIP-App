@@ -350,6 +350,24 @@ body[data-theme="dark"] {
   opacity: 0.88;
 }
 
+/* QR Scanner Card Specific Interactions */
+.qr-scanner-btn {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+}
+
+.qr-scanner-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(79, 124, 255, 0.22);
+}
+
+.qr-scanner-btn:active {
+  transform: translateY(0);
+}
+
 .card {
   padding: 18px;
   margin-bottom: 16px;
@@ -821,7 +839,8 @@ body[data-theme="dark"] .history-item,
 body[data-theme="dark"] .steps div,
 body[data-theme="dark"] .sensor-status,
 body[data-theme="dark"] .feature-grid div,
-body[data-theme="dark"] .calendar-event {
+body[data-theme="dark"] .calendar-event,
+body[data-theme="dark"] .hologram-card.idle {
   background: #1e293b;
   border-color: #334155;
   color: #f8fafc;
