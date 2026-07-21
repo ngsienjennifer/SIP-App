@@ -6,13 +6,17 @@ let timer = null;
 let breaks = 0;
 let points = 0;
 let dailyEarned = 0;
-let dailyGoal = 150;
+let dailyGoal = 600;
 let progress = 0;
 let streak = 0;
 let dailyGoalCompleted = false;
 
-let ringConnected = true;
-let battery = 82;
+let deviceConnected = false;
+let connectedDeviceType = null;
+let connectedDeviceName = "";
+let connectionMethod = "";
+let bluetoothDevice = null;
+let motionSampleCount = 0;
 
 let dndMode = "off";
 let dndTimer = null;
@@ -32,10 +36,10 @@ let unlockedRewards = [];
 const timerDisplay = document.getElementById("timerDisplay");
 const timerMode = document.getElementById("timerMode");
 
-const hologramCard = document.getElementById("hologramCard");
-const hologramTitle = document.getElementById("hologramTitle");
-const hologramText = document.getElementById("hologramText");
-const hologramIcon = document.getElementById("hologramIcon");
+const qrScanCard = document.getElementById("qrScanCard");
+const qrCardTitle = document.getElementById("qrCardTitle");
+const qrCardText = document.getElementById("qrCardText");
+const qrCardIcon = document.getElementById("qrCardIcon");
 
 const breaksToday = document.getElementById("breaksToday");
 const pointsToday = document.getElementById("pointsToday");
@@ -57,12 +61,18 @@ const saveGoalBtn = document.getElementById("saveGoalBtn");
 const resetDemoBtn = document.getElementById("resetDemoBtn");
 
 const connectionText = document.getElementById("connectionText");
+const connectionSubtext = document.getElementById("connectionSubtext");
 const connectionDot = document.getElementById("connectionDot");
 const connectBtn = document.getElementById("connectBtn");
 
-const ringStatusText = document.getElementById("ringStatusText");
-const batteryText = document.getElementById("batteryText");
-const batteryFill = document.getElementById("batteryFill");
+const deviceStatusText = document.getElementById("deviceStatusText");
+const deviceTypeText = document.getElementById("deviceTypeText");
+const connectionMethodText = document.getElementById("connectionMethodText");
+const deviceStatusIcon = document.getElementById("deviceStatusIcon");
+const connectPhoneBtn = document.getElementById("connectPhoneBtn");
+const connectWatchBtn = document.getElementById("connectWatchBtn");
+const demoWatchBtn = document.getElementById("demoWatchBtn");
+const disconnectDeviceBtn = document.getElementById("disconnectDeviceBtn");
 
 const reminderInput = document.getElementById("reminderInput");
 const goalSelect = document.getElementById("goalSelect");
@@ -104,12 +114,17 @@ function getModeLabel() {
   return "Normal";
 }
 
-function setHologram(state, title, text, iconName) {
-  hologramCard.className = `hologram-card ${state} qr-scanner-btn`;
-  hologramTitle.textContent = title;
-  hologramText.textContent = text;
-  hologramIcon.setAttribute("data-lucide", iconName);
+function setQrCard(state, title, text, iconName) {
+  qrScanCard.className = `qr-card ${state} qr-scanner-btn`;
+  qrCardTitle.textContent = title;
+  qrCardText.textContent = text;
+  qrCardIcon.setAttribute("data-lucide", iconName);
   lucide.createIcons();
+}
+
+function getConnectedDeviceLabel() {
+  if (!deviceConnected) return "No Device";
+  return connectedDeviceName || (connectedDeviceType === "watch" ? "Smart Watch" : "This Phone");
 }
 
 function updateUI() {
@@ -131,49 +146,58 @@ function updateUI() {
   dailyPointsEarned.textContent = dailyEarned;
   dailyPointsLeft.textContent = Math.max(0, dailyGoal - dailyEarned);
 
-  connectionText.textContent = ringConnected ? "Ring Connected" : "Ring Disconnected";
-  connectBtn.textContent = ringConnected ? "Disconnect" : "Connect";
-  connectionDot.classList.toggle("off", !ringConnected);
+  const deviceLabel = getConnectedDeviceLabel();
+  connectionText.textContent = deviceConnected ? `${deviceLabel} Connected` : "No Device Connected";
+  connectionSubtext.textContent = deviceConnected
+    ? `${connectionMethod} · ${getModeLabel()}`
+    : "Connect a phone or smart watch";
+  connectBtn.textContent = deviceConnected ? "Manage" : "Connect";
+  connectionDot.classList.toggle("off", !deviceConnected);
 
-  ringStatusText.textContent = ringConnected
-    ? `Ring is connected. Current mode: ${getModeLabel()}.`
-    : "Ring is disconnected. Connect to start monitoring.";
-
-  batteryText.textContent = ringConnected ? `${battery}%` : "--";
-  batteryFill.style.width = ringConnected ? `${battery}%` : "0%";
+  deviceStatusText.textContent = deviceConnected
+    ? `${deviceLabel} is ready to monitor movement. Current mode: ${getModeLabel()}.`
+    : "Choose this phone or pair a smart watch to begin.";
+  deviceTypeText.textContent = deviceConnected ? deviceLabel : "None";
+  connectionMethodText.textContent = deviceConnected ? connectionMethod : "Not connected";
+  deviceStatusIcon.setAttribute("data-lucide", connectedDeviceType === "watch" ? "watch" : "smartphone");
+  disconnectDeviceBtn.disabled = !deviceConnected;
 
   rewardPointsDisplay.textContent = `${points} points`;
 
   if (verifyMovementBtn) {
-    verifyMovementBtn.disabled = !movementRequired;
+    verifyMovementBtn.disabled = !movementRequired || !deviceConnected;
     verifyMovementBtn.innerHTML = movementRequired
-      ? `<i data-lucide="radar"></i> Ring Waiting for Movement`
-      : `<i data-lucide="radar"></i> Waiting for Ring Verification`;
+      ? `<i data-lucide="radar"></i> Device Waiting for Movement`
+      : `<i data-lucide="radar"></i> Waiting for Device Verification`;
   }
 
   if (simulateMovementBtn) {
-    simulateMovementBtn.disabled = !movementRequired;
+    simulateMovementBtn.disabled = !movementRequired || !deviceConnected;
   }
 
   if (movementRequired) {
     sensorStatusTitle.textContent = "Movement required";
-    sensorStatusText.textContent = `Ring is checking for: ${currentVerifiedGoal}`;
+    sensorStatusText.textContent = `${deviceLabel} is checking for: ${currentVerifiedGoal}`;
     sensorStatusDot.className = "sensor-dot active";
   } else {
     sensorStatusTitle.textContent = "No movement required yet";
-    sensorStatusText.textContent = "Start the timer and wait for the ring reminder.";
+    sensorStatusText.textContent = deviceConnected
+      ? "Start the timer and wait for the device reminder."
+      : "Connect a device, then start the timer.";
     sensorStatusDot.className = "sensor-dot idle";
   }
 
   if (activityStatusTitle && activityStatusText && activityStatusDot) {
-    activityStatusTitle.textContent =
-      passiveActivityCount > 0 ? "Passive activity detected" : "Passive tracking active";
+    activityStatusTitle.textContent = !deviceConnected
+      ? "Tracking unavailable"
+      : passiveActivityCount > 0 ? "Passive activity detected" : "Passive tracking active";
 
-    activityStatusText.textContent =
-      `Passive points today: ${passiveActivityPointsToday}/${passiveActivityDailyCap}`;
+    activityStatusText.textContent = deviceConnected
+      ? `Passive points today: ${passiveActivityPointsToday}/${passiveActivityDailyCap}`
+      : "Connect a phone or smart watch to monitor movement.";
 
     activityStatusDot.className =
-      passiveActivityCount > 0 ? "sensor-dot active" : "sensor-dot idle";
+      deviceConnected && passiveActivityCount > 0 ? "sensor-dot active" : "sensor-dot idle";
   }
 
   updateDndText();
@@ -185,11 +209,11 @@ function updateUI() {
 }
 
 function startTimer() {
-  if (!ringConnected) {
-    setHologram(
+  if (!deviceConnected) {
+    setQrCard(
       "active",
-      "Ring disconnected",
-      "Please connect your Holo Ring before starting a session.",
+      "Device required",
+      "Connect this phone or a smart watch before starting a session.",
       "wifi-off"
     );
     return;
@@ -199,19 +223,15 @@ function startTimer() {
 
   timerMode.textContent = dndMode === "off" ? "Active" : getModeLabel();
 
-  setHologram(
+  setQrCard(
     "idle",
     "Monitoring started",
-    `The ring is checking for prolonged sitting. Mode: ${getModeLabel()}.`,
+    `${getConnectedDeviceLabel()} is checking for prolonged sitting. Mode: ${getModeLabel()}.`,
     "radar"
   );
 
   timer = setInterval(() => {
     seconds++;
-
-    if (seconds % 60 === 0 && battery > 0) {
-      battery -= 1;
-    }
 
     const reminderMinutes = Number(reminderInput.value);
     const reminderSeconds = reminderMinutes * 60;
@@ -240,7 +260,7 @@ function resetTimer() {
   currentVerifiedPoints = 0;
   timerMode.textContent = "Ready";
 
-  setHologram(
+  setQrCard(
     "idle",
     "Scan Area QR",
     "Tap here to scan a QR code at your desk or study area.",
@@ -262,7 +282,7 @@ function triggerReminder() {
     movementRequired = false;
     timerMode.textContent = "DND active";
 
-    setHologram(
+    setQrCard(
       "idle",
       "Exam Mode active",
       "No prompts or vibrations. Reminder muted to avoid interrupting your exam.",
@@ -279,14 +299,14 @@ function triggerReminder() {
   if (dndMode === "class") {
     timerMode.textContent = "Silent prompt";
 
-    setHologram(
+    setQrCard(
       "active",
       "Class Mode: Break Pending",
       `Tap to scan a QR code to verify task: ${goal}`,
       "qr-code"
     );
 
-    addHistory("Silent hologram shown", goal);
+    addHistory("Silent app prompt shown", goal);
     updateUI();
     return;
   }
@@ -294,10 +314,10 @@ function triggerReminder() {
   if (dndMode === "focus") {
     timerMode.textContent = "Soft prompt";
 
-    setHologram(
+    setQrCard(
       "active",
       "Soft reminder",
-      `Focus Mode: Complete when ready. Ring is waiting to verify: ${goal}.`,
+      `Focus Mode: Complete when ready. ${getConnectedDeviceLabel()} is waiting to verify: ${goal}.`,
       "sparkles"
     );
 
@@ -312,14 +332,14 @@ function triggerReminder() {
     navigator.vibrate([200, 100, 200]);
   }
 
-  setHologram(
+  setQrCard(
     "active",
     "Time to move!",
     `Task: ${goal}. Walk and tap here to scan an Area QR to verify!`,
     "qr-code"
   );
 
-  addHistory("Hologram task shown", goal);
+  addHistory("Movement task shown", goal);
   updateUI();
 }
 
@@ -365,7 +385,7 @@ function addMovementPoints(earned) {
     streak += 1;
     dailyGoalCompleted = true;
 
-    setHologram(
+    setQrCard(
       "success",
       "Daily goal completed!",
       `You reached ${dailyGoal} points today. Your streak is now ${streak} day(s)!`,
@@ -376,22 +396,22 @@ function addMovementPoints(earned) {
   }
 }
 
-function verifyMovementFromRing() {
-  if (!ringConnected) {
-    setHologram(
+function verifyMovementFromDevice() {
+  if (!deviceConnected) {
+    setQrCard(
       "active",
-      "Ring disconnected",
-      "Connect your ring before movement can be verified.",
+      "Device disconnected",
+      "Connect a phone or smart watch before movement can be verified.",
       "wifi-off"
     );
     return;
   }
 
   if (!movementRequired) {
-    setHologram(
+    setQrCard(
       "idle",
       "No active movement task",
-      "The ring has not triggered a movement task yet.",
+      "The connected device has not triggered a movement task yet.",
       "radar"
     );
     return;
@@ -406,18 +426,18 @@ function verifyMovementFromRing() {
 
   timerMode.textContent = "Verified";
 
-  setHologram(
+  setQrCard(
     "success",
     "Goal accomplished!",
-    `Ring verified: ${currentVerifiedGoal}. +${earned} points earned.`,
+    `${getConnectedDeviceLabel()} verified: ${currentVerifiedGoal}. +${earned} points earned.`,
     "badge-check"
   );
 
-  addHistory("Ring verified movement", `${currentVerifiedGoal} · +${earned} points`);
+  addHistory("Device verified movement", `${currentVerifiedGoal} · +${earned} points`);
 
   setTimeout(() => {
     if (!movementRequired) {
-      setHologram(
+      setQrCard(
         "idle",
         "Scan Area QR",
         "Tap here to scan a QR code at your desk or study area.",
@@ -433,12 +453,12 @@ function verifyMovementFromRing() {
   updateUI();
 }
 
-function simulatePassiveRingActivity() {
-  if (!ringConnected) {
-    setHologram(
+function simulatePassiveDeviceActivity() {
+  if (!deviceConnected) {
+    setQrCard(
       "active",
-      "Ring disconnected",
-      "Connect your ring before passive activity can be tracked.",
+      "Device disconnected",
+      "Connect a phone or smart watch before passive activity can be tracked.",
       "wifi-off"
     );
     return;
@@ -453,7 +473,7 @@ function simulatePassiveRingActivity() {
     },
     {
       label: "Walking detected",
-      detail: "Ring detected walking motion",
+      detail: `${getConnectedDeviceLabel()} detected walking motion`,
       points: 8,
       icon: "footprints"
     },
@@ -468,10 +488,10 @@ function simulatePassiveRingActivity() {
   const selected = activityTypes[Math.floor(Math.random() * activityTypes.length)];
 
   if (passiveActivityPointsToday >= passiveActivityDailyCap) {
-    setHologram(
+    setQrCard(
       "idle",
       "Passive point limit reached",
-      "The ring is still tracking activity, but passive points are capped for today.",
+      "The connected device is still tracking activity, but passive points are capped for today.",
       "shield-check"
     );
 
@@ -488,7 +508,7 @@ function simulatePassiveRingActivity() {
 
   addMovementPoints(awardedPoints);
 
-  setHologram(
+  setQrCard(
     "idle",
     selected.label,
     `${selected.detail}. +${awardedPoints} passive points earned.`,
@@ -506,30 +526,177 @@ function simulatePassiveRingActivity() {
   updateUI();
 }
 
-function toggleConnection() {
-  ringConnected = !ringConnected;
+function showDevicesTab() {
+  document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+  document.querySelectorAll(".tab-page").forEach(page => page.classList.remove("active"));
 
-  if (!ringConnected) {
-    clearInterval(timer);
-    timer = null;
-    movementRequired = false;
-    timerMode.textContent = "Offline";
+  const devicesTab = document.querySelector('[data-tab="devices"]');
+  const devicesPage = document.getElementById("devices");
+  devicesTab.classList.add("active");
+  devicesPage.classList.add("active");
+  lucide.createIcons();
+}
 
-    setHologram(
+function setConnectedDevice(type, name, method) {
+  deviceConnected = true;
+  connectedDeviceType = type;
+  connectedDeviceName = name;
+  connectionMethod = method;
+  timerMode.textContent = "Ready";
+
+  setQrCard(
+    "success",
+    `${name} connected`,
+    "Movement monitoring is ready. The QR scan simulation is also available.",
+    type === "watch" ? "watch" : "smartphone"
+  );
+
+  addHistory("Device connected", `${name} · ${method}`);
+  updateUI();
+}
+
+function handleDeviceMotion(event) {
+  if (!deviceConnected || connectedDeviceType !== "phone") return;
+
+  const acceleration = event.accelerationIncludingGravity || event.acceleration;
+  if (!acceleration) return;
+
+  const x = acceleration.x || 0;
+  const y = acceleration.y || 0;
+  const z = acceleration.z || 0;
+  const magnitude = Math.sqrt((x * x) + (y * y) + (z * z));
+
+  if (magnitude > 12.5) {
+    motionSampleCount += 1;
+    activityStatusTitle.textContent = "Phone movement detected";
+    activityStatusText.textContent = "Live phone sensor activity received.";
+    activityStatusDot.className = "sensor-dot active";
+
+    if (movementRequired && motionSampleCount >= 3) {
+      motionSampleCount = 0;
+      verifyMovementFromDevice();
+    }
+  } else {
+    motionSampleCount = Math.max(0, motionSampleCount - 1);
+  }
+}
+
+async function connectPhone() {
+  try {
+    let method = "Browser connection (demo sensors)";
+    let motionSensorsAvailable = false;
+
+    if (typeof DeviceMotionEvent !== "undefined") {
+      if (typeof DeviceMotionEvent.requestPermission === "function") {
+        const permission = await DeviceMotionEvent.requestPermission();
+        if (permission !== "granted") {
+          throw new Error("Motion sensor permission was not granted.");
+        }
+      }
+
+      motionSensorsAvailable = true;
+      method = "Browser motion sensors";
+    }
+
+    if (deviceConnected) disconnectDevice(false);
+    if (motionSensorsAvailable) {
+      window.addEventListener("devicemotion", handleDeviceMotion);
+    }
+    setConnectedDevice("phone", "This Phone", method);
+  } catch (error) {
+    setQrCard(
       "active",
-      "Ring disconnected",
-      "Reconnect the Holo Ring to continue monitoring inactivity.",
+      "Phone connection not completed",
+      error.message || "Allow motion access to use this phone for verification.",
+      "triangle-alert"
+    );
+  }
+}
+
+async function connectWatch() {
+  if (!navigator.bluetooth) {
+    setQrCard(
+      "active",
+      "Bluetooth pairing unavailable",
+      "This browser does not support Web Bluetooth. Use the smart-watch demo connection instead.",
+      "bluetooth-off"
+    );
+    return;
+  }
+
+  try {
+    const selectedDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true
+    });
+
+    if (!selectedDevice.gatt) {
+      throw new Error("The selected device does not expose a Bluetooth data connection.");
+    }
+
+    await selectedDevice.gatt.connect();
+    if (deviceConnected) disconnectDevice(false);
+    bluetoothDevice = selectedDevice;
+    bluetoothDevice.addEventListener("gattserverdisconnected", handleWatchDisconnected);
+
+    setConnectedDevice("watch", selectedDevice.name || "Smart Watch", "Web Bluetooth");
+  } catch (error) {
+    const cancelled = error.name === "NotFoundError";
+    setQrCard(
+      cancelled ? "idle" : "active",
+      cancelled ? "Pairing cancelled" : "Watch connection failed",
+      cancelled
+        ? "No device was selected. You can try again or use the demo watch connection."
+        : (error.message || "The watch could not be connected."),
+      cancelled ? "watch" : "triangle-alert"
+    );
+  }
+}
+
+function connectDemoWatch() {
+  if (deviceConnected) disconnectDevice(false);
+  setConnectedDevice("watch", "Demo Smart Watch", "Prototype simulation");
+}
+
+function handleWatchDisconnected(event) {
+  if (event.target !== bluetoothDevice) return;
+  bluetoothDevice = null;
+  disconnectDevice(false);
+
+  setQrCard(
+    "active",
+    "Smart watch disconnected",
+    "Return to Devices to pair it again.",
+    "bluetooth-off"
+  );
+}
+
+function disconnectDevice(showMessage = true) {
+  window.removeEventListener("devicemotion", handleDeviceMotion);
+
+  const deviceToDisconnect = bluetoothDevice;
+  bluetoothDevice = null;
+  if (deviceToDisconnect?.gatt?.connected) {
+    deviceToDisconnect.gatt.disconnect();
+  }
+
+  clearInterval(timer);
+  timer = null;
+  movementRequired = false;
+  motionSampleCount = 0;
+  deviceConnected = false;
+  connectedDeviceType = null;
+  connectedDeviceName = "";
+  connectionMethod = "";
+  timerMode.textContent = "Offline";
+
+  if (showMessage) {
+    setQrCard(
+      "active",
+      "Device disconnected",
+      "Connect this phone or a smart watch to continue monitoring inactivity.",
       "wifi-off"
     );
-  } else {
-    timerMode.textContent = "Ready";
-
-    setHologram(
-      "idle",
-      "Scan Area QR",
-      "Tap here to scan a QR code at your desk or study area.",
-      "qr-code"
-    );
+    addHistory("Device disconnected", "Monitoring stopped");
   }
 
   updateUI();
@@ -542,7 +709,7 @@ function activateDnd() {
   if (dndMode === "off") {
     dndRemainingSeconds = 0;
 
-    setHologram(
+    setQrCard(
       "idle",
       "Scan Area QR",
       "Tap here to scan a QR code at your desk or study area.",
@@ -555,7 +722,7 @@ function activateDnd() {
 
   dndRemainingSeconds = Number(dndDuration.value) * 60;
 
-  setHologram(
+  setQrCard(
     "idle",
     `${getModeLabel()} activated`,
     getDndDescription(),
@@ -570,7 +737,7 @@ function activateDnd() {
       dndSelect.value = "off";
       clearInterval(dndTimer);
 
-      setHologram(
+      setQrCard(
         "idle",
         "DND ended",
         "Normal movement reminders are active again.",
@@ -586,11 +753,11 @@ function activateDnd() {
 
 function getDndDescription() {
   if (dndMode === "class") {
-    return "Class Mode keeps the ring silent but still shows a subtle hologram reminder.";
+    return "Class Mode keeps the connected device silent but still shows a subtle app reminder.";
   }
 
   if (dndMode === "exam") {
-    return "Exam Mode mutes vibration and hologram prompts to prevent disruption.";
+    return "Exam Mode mutes vibration and app prompts to prevent disruption.";
   }
 
   if (dndMode === "focus") {
@@ -673,7 +840,7 @@ function updateCurrentBadge() {
 
 function redeemReward(cost, rewardName) {
   if (points < cost) {
-    setHologram(
+    setQrCard(
       "active",
       "Not enough points",
       `${rewardName} needs ${cost} points. Keep moving to unlock it.`,
@@ -685,7 +852,7 @@ function redeemReward(cost, rewardName) {
   points -= cost;
   unlockedRewards.unshift(`${rewardName} - redeemed for ${cost} points`);
 
-  setHologram(
+  setQrCard(
     "success",
     "Reward redeemed!",
     `${rewardName} has been added to your reward wallet.`,
@@ -711,9 +878,9 @@ function changeTheme() {
   const theme = themeSelect.value;
   document.body.setAttribute("data-theme", theme);
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("holoRingTheme", theme);
+  localStorage.setItem("sipMoveTheme", theme);
 
-  setHologram(
+  setQrCard(
     "idle",
     "Theme changed",
     `Your app theme is now ${themeSelect.options[themeSelect.selectedIndex].text}.`,
@@ -722,7 +889,7 @@ function changeTheme() {
 }
 
 function loadSavedTheme() {
-  const savedTheme = localStorage.getItem("holoRingTheme") || "ocean";
+  const savedTheme = localStorage.getItem("sipMoveTheme") || "ocean";
 
   document.body.setAttribute("data-theme", savedTheme);
   document.documentElement.setAttribute("data-theme", savedTheme);
@@ -736,7 +903,7 @@ function saveDailyGoal() {
   const newGoal = Number(dailyGoalInput.value);
 
   if (!newGoal || newGoal < 50) {
-    setHologram(
+    setQrCard(
       "active",
       "Invalid goal",
       "Please set a daily goal of at least 50 points.",
@@ -747,7 +914,7 @@ function saveDailyGoal() {
 
   dailyGoal = newGoal;
 
-  setHologram(
+  setQrCard(
     "idle",
     "Daily goal updated",
     `Your new daily movement goal is ${dailyGoal} points.`,
@@ -781,7 +948,7 @@ function resetDemoProgress() {
 
   timerMode.textContent = "Ready";
 
-  setHologram(
+  setQrCard(
     "idle",
     "Demo progress reset",
     "Points, streak, passive activity, verified breaks, rewards, and progress have been reset to 0.",
@@ -792,8 +959,8 @@ function resetDemoProgress() {
 }
 
 // Add the interactive on-tap QR scanner action
-if (hologramCard) {
-  hologramCard.addEventListener("click", () => {
+if (qrScanCard) {
+  qrScanCard.addEventListener("click", () => {
     const campusAreas = [
       "Library Silent Zone - Desk 42",
       "Campus Gym - Active Zone",
@@ -811,7 +978,7 @@ if (hologramCard) {
       movementRequired = false;
       timerMode.textContent = "Verified";
 
-      setHologram(
+      setQrCard(
         "success",
         "Break Verified!",
         `Scanned at ${randomArea}. +${earned} points earned!`,
@@ -823,7 +990,7 @@ if (hologramCard) {
       const scanPoints = 10;
       addMovementPoints(scanPoints);
       
-      setHologram(
+      setQrCard(
         "success",
         "Location Synced!",
         `Successfully scanned at: ${randomArea}. +${scanPoints} points earned!`,
@@ -837,7 +1004,7 @@ if (hologramCard) {
 
     setTimeout(() => {
       if (!movementRequired) {
-        setHologram(
+        setQrCard(
           "idle",
           "Scan Area QR",
           "Tap here to scan a QR code at your desk or study area.",
@@ -864,13 +1031,17 @@ document.querySelectorAll(".tab").forEach(tab => {
 startBtn.addEventListener("click", startTimer);
 pauseBtn.addEventListener("click", pauseTimer);
 resetBtn.addEventListener("click", resetTimer);
-connectBtn.addEventListener("click", toggleConnection);
+connectBtn.addEventListener("click", showDevicesTab);
+connectPhoneBtn.addEventListener("click", connectPhone);
+connectWatchBtn.addEventListener("click", connectWatch);
+demoWatchBtn.addEventListener("click", connectDemoWatch);
+disconnectDeviceBtn.addEventListener("click", () => disconnectDevice(true));
 
-verifyMovementBtn.addEventListener("click", verifyMovementFromRing);
-simulateMovementBtn.addEventListener("click", verifyMovementFromRing);
+verifyMovementBtn.addEventListener("click", verifyMovementFromDevice);
+simulateMovementBtn.addEventListener("click", verifyMovementFromDevice);
 
 if (simulatePassiveActivityBtn) {
-  simulatePassiveActivityBtn.addEventListener("click", simulatePassiveRingActivity);
+  simulatePassiveActivityBtn.addEventListener("click", simulatePassiveDeviceActivity);
 }
 
 document.querySelectorAll(".reward-item").forEach(button => {
