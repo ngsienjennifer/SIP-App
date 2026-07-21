@@ -160,19 +160,17 @@ body[data-theme="dark"] {
   font-size: 14px;
 }
 
-.ring-orb {
+.device-orb {
   width: 78px;
   height: 78px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(255,255,255,0.95) 0 20%, transparent 22%),
-    linear-gradient(135deg, #1f2937, #020617);
+  background: linear-gradient(135deg, #1f2937, #020617);
   display: grid;
   place-items: center;
   box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.15), 0 0 30px rgba(86, 215, 255, 0.35);
 }
 
-.ring-orb svg {
+.device-orb svg {
   color: var(--cyan);
   width: 36px;
   height: 36px;
@@ -288,7 +286,7 @@ body[data-theme="dark"] {
   }
 }
 
-.hologram-card {
+.qr-card {
   position: relative;
   min-height: 160px;
   overflow: hidden;
@@ -299,28 +297,28 @@ body[data-theme="dark"] {
   text-align: center;
 }
 
-.hologram-card.idle {
+.qr-card.idle {
   background: linear-gradient(135deg, #e0f2fe, #eef2ff);
   color: #075985;
 }
 
-.hologram-card.active {
+.qr-card.active {
   background: linear-gradient(135deg, #061b35, #0f4c81);
   color: white;
   box-shadow: 0 0 34px rgba(86, 215, 255, 0.55);
 }
 
-.hologram-card.success {
+.qr-card.success {
   background: linear-gradient(135deg, #dcfce7, #bbf7d0);
   color: #166534;
 }
 
-.hologram-card.powerdown {
+.qr-card.powerdown {
   background: linear-gradient(135deg, #111827, #334155);
   color: white;
 }
 
-.hologram-beam {
+.qr-card-glow {
   position: absolute;
   width: 180px;
   height: 180px;
@@ -329,22 +327,22 @@ body[data-theme="dark"] {
   transform: translateY(40px);
 }
 
-.hologram-content {
+.qr-content {
   position: relative;
   padding: 20px;
 }
 
-.hologram-content svg {
+.qr-content svg {
   width: 36px;
   height: 36px;
 }
 
-.hologram-content h2 {
+.qr-content h2 {
   margin: 8px 0;
   font-size: 22px;
 }
 
-.hologram-content p {
+.qr-content p {
   margin: 0;
   color: inherit;
   opacity: 0.88;
@@ -480,8 +478,7 @@ body[data-theme="dark"] {
   font-weight: 700;
 }
 
-.progress-shell,
-.battery-track {
+.progress-shell {
   height: 16px;
   background: #e2e8f0;
   border-radius: 999px;
@@ -489,8 +486,7 @@ body[data-theme="dark"] {
   margin: 16px 0 8px;
 }
 
-.progress-fill,
-.battery-fill {
+.progress-fill {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, var(--green), var(--cyan));
@@ -597,23 +593,29 @@ body[data-theme="dark"] {
   box-shadow: 0 0 14px var(--green);
 }
 
-.ring-showcase {
+.device-showcase {
   text-align: center;
 }
 
-.big-ring {
+.connected-device-visual {
   width: 135px;
   height: 135px;
   margin: 10px auto 16px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(246, 248, 252, 1) 0 37%, transparent 38%),
-    linear-gradient(135deg, #0f172a, #6b7280);
+  background: linear-gradient(135deg, #0f172a, #475569);
   position: relative;
+  display: grid;
+  place-items: center;
   box-shadow: inset 0 0 14px rgba(255,255,255,0.3), 0 0 28px rgba(79, 124, 255, 0.28);
 }
 
-.ring-light {
+.connected-device-visual svg {
+  width: 58px;
+  height: 58px;
+  color: white;
+}
+
+.device-signal {
   position: absolute;
   right: 24px;
   bottom: 28px;
@@ -624,11 +626,96 @@ body[data-theme="dark"] {
   box-shadow: 0 0 18px var(--cyan);
 }
 
-.battery-info {
-  display: flex;
-  justify-content: space-between;
+.device-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.device-details div {
+  padding: 12px;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.device-details span,
+.device-details strong {
+  display: block;
+}
+
+.device-details span {
   color: var(--muted);
-  font-weight: 800;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.device-options {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.device-option-btn,
+.danger-wide-btn {
+  width: 100%;
+  border: none;
+  border-radius: 18px;
+  padding: 14px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.device-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  color: white;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+}
+
+.device-option-btn svg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.device-option-btn span,
+.device-option-btn strong,
+.device-option-btn small {
+  display: block;
+}
+
+.device-option-btn small {
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+}
+
+.secondary-device-option {
+  color: var(--text);
+  background: #eef2ff;
+  border: 1px dashed var(--blue);
+}
+
+.secondary-device-option small {
+  color: var(--muted);
+}
+
+.danger-wide-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  color: white;
+  background: var(--red);
+  font-weight: 900;
+}
+
+.danger-wide-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .steps {
@@ -840,7 +927,9 @@ body[data-theme="dark"] .steps div,
 body[data-theme="dark"] .sensor-status,
 body[data-theme="dark"] .feature-grid div,
 body[data-theme="dark"] .calendar-event,
-body[data-theme="dark"] .hologram-card.idle {
+body[data-theme="dark"] .device-details div,
+body[data-theme="dark"] .secondary-device-option,
+body[data-theme="dark"] .qr-card.idle {
   background: #1e293b;
   border-color: #334155;
   color: #f8fafc;
