@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Holo Ring App</title>
+  <title>SIP Move</title>
 
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -16,13 +16,13 @@
     <!-- HEADER -->
     <section class="hero">
       <div>
-        <p class="eyebrow">HoloRing Prototype</p>
-        <h1>Holo Ring</h1>
+        <p class="eyebrow">Movement Companion</p>
+        <h1>SIP Move</h1>
         <p class="subtitle">Detect. Prompt. Move. Achieve.</p>
       </div>
 
-      <div class="ring-orb">
-        <i data-lucide="circle-dot"></i>
+      <div class="device-orb">
+        <i data-lucide="smartphone"></i>
       </div>
     </section>
 
@@ -31,12 +31,12 @@
       <div class="connection-left">
         <span id="connectionDot" class="connection-dot"></span>
         <div>
-          <h3 id="connectionText">Ring Connected</h3>
-          <p>Haptic + hologram ready</p>
+          <h3 id="connectionText">No Device Connected</h3>
+          <p id="connectionSubtext">Connect a phone or smart watch</p>
         </div>
       </div>
 
-      <button id="connectBtn" class="pill-btn">Disconnect</button>
+      <button id="connectBtn" class="pill-btn">Connect</button>
     </section>
 
     <!-- TABS -->
@@ -51,9 +51,9 @@
         Stats
       </button>
 
-      <button class="tab" data-tab="ring">
-        <i data-lucide="circle"></i>
-        Ring
+      <button class="tab" data-tab="devices">
+        <i data-lucide="watch"></i>
+        Devices
       </button>
 
       <button class="tab" data-tab="rewards">
@@ -69,14 +69,14 @@
 
     <!-- HOME -->
     <section id="home" class="tab-page active">
-      <!-- QR Scanner Button (Replaces Hologram Card) -->
-      <button id="hologramCard" class="hologram-card idle qr-scanner-btn">
-        <div class="hologram-beam"></div>
+      <!-- QR scan simulation retained for prototype demonstrations -->
+      <button id="qrScanCard" class="qr-card idle qr-scanner-btn">
+        <div class="qr-card-glow"></div>
 
-        <div class="hologram-content">
-          <i id="hologramIcon" data-lucide="qr-code"></i>
-          <h2 id="hologramTitle">Scan Area QR</h2>
-          <p id="hologramText">
+        <div class="qr-content">
+          <i id="qrCardIcon" data-lucide="qr-code"></i>
+          <h2 id="qrCardTitle">Scan Area QR</h2>
+          <p id="qrCardText">
             Tap here to scan a QR code at your desk or study area.
           </p>
         </div>
@@ -130,26 +130,26 @@
 
       <button id="verifyMovementBtn" class="complete-btn" disabled>
         <i data-lucide="radar"></i>
-        Waiting for Ring Verification
+        Waiting for Device Verification
       </button>
 
       <section class="card sensor-card">
-        <h2>Ring Sensor Simulation</h2>
+        <h2>Connected Device Sensors</h2>
         <p class="hint">
-          Prototype demo: the real ring would use motion sensors to verify that the user completed the hologram movement task.
+          A connected phone or smart watch can use motion sensors to verify movement. The demo buttons remain available when browser sensor data is unavailable.
         </p>
 
         <section class="card sensor-card">
           <h2>Auto Activity Tracking</h2>
           <p class="hint">
-            The ring passively tracks movement during the day, such as walking between classes or moving around campus. Points are added based on detected movement within a time period and are capped to prevent reward farming.
+            Your connected device can track movement during the day, such as walking between classes or moving around campus. Points are capped to prevent reward farming.
           </p>
         
           <div class="sensor-status">
             <span id="activityStatusDot" class="sensor-dot idle"></span>
             <div>
               <strong id="activityStatusTitle">Passive tracking active</strong>
-              <p id="activityStatusText">Ring is monitoring daily movement in the background.</p>
+              <p id="activityStatusText">Connect a device to monitor daily movement.</p>
             </div>
           </div>
         
@@ -163,13 +163,13 @@
           <span id="sensorStatusDot" class="sensor-dot idle"></span>
           <div>
             <strong id="sensorStatusTitle">No movement required yet</strong>
-            <p id="sensorStatusText">Start the timer and wait for the ring reminder.</p>
+            <p id="sensorStatusText">Connect a device, then start the timer.</p>
           </div>
         </div>
 
         <button id="simulateMovementBtn" class="secondary-wide-btn" disabled>
           <i data-lucide="activity"></i>
-          Simulate Ring Verified Movement
+          Demo: Simulate Verified Movement
         </button>
       </section>
     </section>
@@ -230,7 +230,7 @@
       </section>
 
       <section class="card">
-        <h2>Recent Ring Activity</h2>
+        <h2>Recent Device Activity</h2>
         <div id="historyList" class="history-list">
           <p class="hint">No verified movement yet.</p>
         </div>
@@ -249,77 +249,85 @@
       <section class="card insight-card">
         <h2>Insight</h2>
         <p>
-          The app does not rely on manual activity logging. Points are only awarded after the ring verifies movement.
+          Movement can be verified by a connected phone or smart watch, or by scanning an area QR code during a demo.
         </p>
       </section>
     </section>
 
-    <!-- RING -->
-    <section id="ring" class="tab-page">
-      <section class="ring-showcase card">
-        <div class="big-ring">
-          <div class="ring-hole"></div>
-          <span class="ring-light"></span>
+    <!-- DEVICES -->
+    <section id="devices" class="tab-page">
+      <section class="device-showcase card">
+        <div class="connected-device-visual">
+          <i id="deviceStatusIcon" data-lucide="smartphone"></i>
+          <span class="device-signal"></span>
         </div>
 
-        <h2>Holo Ring Status</h2>
-        <p id="ringStatusText">
-          Your ring is connected and ready to detect inactivity.
+        <h2>Connected Device</h2>
+        <p id="deviceStatusText">
+          Choose this phone or pair a smart watch to begin.
         </p>
 
-        <div class="battery-box">
-          <div class="battery-info">
-            <span>Battery</span>
-            <strong id="batteryText">82%</strong>
+        <div class="device-details">
+          <div>
+            <span>Device</span>
+            <strong id="deviceTypeText">None</strong>
           </div>
-
-          <div class="battery-track">
-            <div id="batteryFill" class="battery-fill"></div>
+          <div>
+            <span>Connection</span>
+            <strong id="connectionMethodText">Not connected</strong>
           </div>
         </div>
+      </section>
+
+      <section class="card">
+        <h2>Connect a Device</h2>
+        <p class="hint">Use this phone's motion sensors, or pair a compatible Bluetooth smart watch.</p>
+
+        <div class="device-options">
+          <button id="connectPhoneBtn" class="device-option-btn">
+            <i data-lucide="smartphone"></i>
+            <span><strong>Use This Phone</strong><small>Browser motion sensors</small></span>
+          </button>
+
+          <button id="connectWatchBtn" class="device-option-btn">
+            <i data-lucide="watch"></i>
+            <span><strong>Pair Smart Watch</strong><small>Web Bluetooth, when supported</small></span>
+          </button>
+
+          <button id="demoWatchBtn" class="device-option-btn secondary-device-option">
+            <i data-lucide="play-circle"></i>
+            <span><strong>Demo Smart Watch</strong><small>Prototype fallback without hardware</small></span>
+          </button>
+        </div>
+
+        <button id="disconnectDeviceBtn" class="danger-wide-btn" disabled>
+          <i data-lucide="unlink"></i>
+          Disconnect Device
+        </button>
       </section>
 
       <section class="card">
         <h2>How It Works</h2>
 
         <div class="steps">
-          <div>
-            <span>1</span>
-            <p>Ring detects prolonged inactivity</p>
-          </div>
-
-          <div>
-            <span>2</span>
-            <p>Ring sends a subtle vibration prompt</p>
-          </div>
-
-          <div>
-            <span>3</span>
-            <p>Hologram activates with a movement task</p>
-          </div>
-
-          <div>
-            <span>4</span>
-            <p>Ring verifies that movement was completed</p>
-          </div>
-
-          <div>
-            <span>5</span>
-            <p>Goal achieved hologram appears and powers down</p>
-          </div>
+          <div><span>1</span><p>Connect this phone or a compatible smart watch</p></div>
+          <div><span>2</span><p>The app monitors the sitting timer</p></div>
+          <div><span>3</span><p>Your connected device sends a movement prompt</p></div>
+          <div><span>4</span><p>Device motion or an area QR scan verifies the break</p></div>
+          <div><span>5</span><p>Points and progress update in the app</p></div>
         </div>
       </section>
 
       <section class="card feature-card">
-        <h2>Ring Features</h2>
+        <h2>Connection Features</h2>
 
         <div class="feature-grid">
           <div><i data-lucide="target"></i><p>Custom Goals</p></div>
           <div><i data-lucide="bell"></i><p>Smart Reminders</p></div>
           <div><i data-lucide="bar-chart-3"></i><p>Activity Analytics</p></div>
-          <div><i data-lucide="droplets"></i><p>Water Resistant</p></div>
-          <div><i data-lucide="battery-medium"></i><p>Up to 5 Days Battery</p></div>
-          <div><i data-lucide="projector"></i><p>Hologram Prompt</p></div>
+          <div><i data-lucide="smartphone"></i><p>Phone Sensors</p></div>
+          <div><i data-lucide="watch"></i><p>Smart Watch Pairing</p></div>
+          <div><i data-lucide="qr-code"></i><p>QR Demo Verification</p></div>
         </div>
       </section>
     </section>
@@ -422,7 +430,7 @@
         </label>
 
         <label>
-          Hologram movement task
+          Movement task
           <select id="goalSelect">
             <option>Stretch for 2 minutes</option>
             <option>Walk 100 steps</option>
@@ -475,14 +483,14 @@
       <section class="card dnd-card">
         <h2>Do Not Disturb Mode</h2>
         <p class="hint">
-          The ring can reduce or mute hologram prompts during classes, exams, or focus time.
+          The app can reduce or mute device prompts during classes, exams, or focus time.
         </p>
 
         <label>
           DND mode
           <select id="dndSelect">
             <option value="off">Off - Normal reminders</option>
-            <option value="class">Class Mode - Silent hologram only</option>
+            <option value="class">Class Mode - Silent app prompt</option>
             <option value="exam">Exam Mode - No interruption</option>
             <option value="focus">Focus Mode - Softer reminders</option>
           </select>
