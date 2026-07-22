@@ -31,8 +31,8 @@
       <div class="connection-left">
         <span id="connectionDot" class="connection-dot"></span>
         <div>
-          <h3 id="connectionText">No Device Connected</h3>
-          <p id="connectionSubtext">Connect a phone or smart watch</p>
+          <h3 id="connectionText" aria-live="polite">No Device Connected</h3>
+          <p id="connectionSubtext">Connect a supported mobile device or smart watch</p>
         </div>
       </div>
 
@@ -263,8 +263,8 @@
         </div>
 
         <h2>Connected Device</h2>
-        <p id="deviceStatusText">
-          Choose this phone or pair a smart watch to begin.
+        <p id="deviceStatusText" aria-live="polite">
+          Choose this mobile device or pair a compatible smart watch to begin.
         </p>
 
         <div class="device-details">
@@ -281,24 +281,31 @@
 
       <section class="card">
         <h2>Connect a Device</h2>
-        <p class="hint">Use this phone's motion sensors, or pair a compatible Bluetooth smart watch.</p>
+        <p class="hint">Use this mobile device's verified motion sensors, or pair a compatible Bluetooth smart watch.</p>
 
         <div class="device-options">
-          <button id="connectPhoneBtn" class="device-option-btn">
+          <button id="connectPhoneBtn" class="device-option-btn" aria-describedby="phoneCompatibilityText">
             <i data-lucide="smartphone"></i>
-            <span><strong>Use This Phone</strong><small>Browser motion sensors</small></span>
+            <span><strong>Use This Mobile Device</strong><small>Requires a real phone or tablet motion sensor</small></span>
           </button>
+          <p id="phoneCompatibilityText" class="connection-note" role="status"></p>
 
-          <button id="connectWatchBtn" class="device-option-btn">
+          <button id="connectWatchBtn" class="device-option-btn" aria-describedby="watchCompatibilityText">
             <i data-lucide="watch"></i>
-            <span><strong>Pair Smart Watch</strong><small>Web Bluetooth, when supported</small></span>
+            <span><strong>Pair Smart Watch</strong><small>Filtered Web Bluetooth pairing</small></span>
           </button>
+          <p id="watchCompatibilityText" class="connection-note" role="status"></p>
 
           <button id="demoWatchBtn" class="device-option-btn secondary-device-option">
             <i data-lucide="play-circle"></i>
             <span><strong>Demo Smart Watch</strong><small>Prototype fallback without hardware</small></span>
           </button>
         </div>
+
+        <aside class="connection-limit" aria-label="Connection requirement">
+          <i data-lucide="info"></i>
+          <p>A nearby phone cannot act as a Bluetooth motion sensor from a normal web page alone. Open SIP Move on that phone, or use a dedicated companion app that exposes an approved Bluetooth service.</p>
+        </aside>
 
         <button id="disconnectDeviceBtn" class="danger-wide-btn" disabled>
           <i data-lucide="unlink"></i>
@@ -310,7 +317,7 @@
         <h2>How It Works</h2>
 
         <div class="steps">
-          <div><span>1</span><p>Connect this phone or a compatible smart watch</p></div>
+          <div><span>1</span><p>Open the app on a mobile device or pair a compatible smart watch</p></div>
           <div><span>2</span><p>The app monitors the sitting timer</p></div>
           <div><span>3</span><p>Your connected device sends a movement prompt</p></div>
           <div><span>4</span><p>Device motion or an area QR scan verifies the break</p></div>
