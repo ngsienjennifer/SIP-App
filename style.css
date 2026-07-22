@@ -656,6 +656,21 @@ body[data-theme="dark"] {
   margin: 14px 0;
 }
 
+.connection-note {
+  margin: -3px 4px 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.connection-note.ready {
+  color: #15803d;
+}
+
+.connection-note.warning {
+  color: #b45309;
+}
+
 .device-option-btn,
 .danger-wide-btn {
   width: 100%;
@@ -673,6 +688,12 @@ body[data-theme="dark"] {
   text-align: left;
   color: white;
   background: linear-gradient(135deg, var(--blue), var(--purple));
+}
+
+.device-option-btn:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+  opacity: 0.5;
 }
 
 .device-option-btn svg {
@@ -701,6 +722,31 @@ body[data-theme="dark"] {
 
 .secondary-device-option small {
   color: var(--muted);
+}
+
+.connection-limit {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid rgba(79, 124, 255, 0.24);
+  border-radius: 16px;
+  color: var(--muted);
+  background: rgba(79, 124, 255, 0.08);
+}
+
+.connection-limit svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--blue);
+}
+
+.connection-limit p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .danger-wide-btn {
