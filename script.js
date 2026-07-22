@@ -18,6 +18,31 @@ let connectionMethod = "";
 let bluetoothDevice = null;
 let motionSampleCount = 0;
 
+const MOBILE_USER_AGENT_PATTERN = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i;
+const SMART_WATCH_FILTERS = [
+  { services: ["heart_rate"] },
+  { namePrefix: "Galaxy Watch" },
+  { namePrefix: "Pixel Watch" },
+  { namePrefix: "Apple Watch" },
+  { namePrefix: "Garmin" },
+  { namePrefix: "Fitbit" },
+  { namePrefix: "Amazfit" },
+  { namePrefix: "HUAWEI WATCH" },
+  { namePrefix: "Huawei Watch" },
+  { namePrefix: "Mi Band" },
+  { namePrefix: "Xiaomi Smart Band" },
+  { namePrefix: "WHOOP" },
+  { namePrefix: "Smart Watch" },
+  { namePrefix: "SmartWatch" },
+  { namePrefix: "Watch" },
+  { namePrefix: "Band" }
+];
+const SMART_WATCH_OPTIONAL_SERVICES = [
+  "heart_rate",
+  "battery_service",
+  "device_information"
+];
+
 let dndMode = "off";
 let dndTimer = null;
 let dndRemainingSeconds = 0;
@@ -35,6 +60,9 @@ let unlockedRewards = [];
 
 const timerDisplay = document.getElementById("timerDisplay");
 const timerMode = document.getElementById("timerMode");
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const resetBtn = document.getElementById("resetBtn");
 
 const qrScanCard = document.getElementById("qrScanCard");
 const qrCardTitle = document.getElementById("qrCardTitle");
@@ -73,6 +101,8 @@ const connectPhoneBtn = document.getElementById("connectPhoneBtn");
 const connectWatchBtn = document.getElementById("connectWatchBtn");
 const demoWatchBtn = document.getElementById("demoWatchBtn");
 const disconnectDeviceBtn = document.getElementById("disconnectDeviceBtn");
+const phoneCompatibilityText = document.getElementById("phoneCompatibilityText");
+const watchCompatibilityText = document.getElementById("watchCompatibilityText");
 
 const reminderInput = document.getElementById("reminderInput");
 const goalSelect = document.getElementById("goalSelect");
@@ -127,6 +157,87 @@ function getConnectedDeviceLabel() {
   return connectedDeviceName || (connectedDeviceType === "watch" ? "Smart Watch" : "This Phone");
 }
 
+function isLikelyMobileDevice() {
+  if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean") {
+    return navigator.userAgentData.mobile;
+  }
+
+  const isIPadDesktopMode = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return MOBILE_USER_AGENT_PATTERN.test(navigator.userAgent) || isIPadDesktopMode;
+}
+
+function getPhoneConnectionIssue() {
+  if (!isLikelyMobileDevice()) {
+    return "Unavailable on this computer. Open SIP Move directly on the phone or tablet you want to use.";
+  }
+
+  if (!window.isSecureContext) {
+    return "Motion sensors require a secure HTTPS connection.";
+  }
+
+  if (typeof DeviceMotionEvent === "undefined") {
+    return "This mobile browser does not provide motion sensor access.";
+  }
+
+  return "Ready. You will be asked for motion permission, then the app will verify a real sensor reading.";
+}
+
+function getWatchConnectionIssue() {
+  if (!window.isSecureContext) {
+    return "Bluetooth pairing requires HTTPS or localhost.";
+  }
+
+  if (!navigator.bluetooth) {
+    return "Web Bluetooth is unavailable in this browser. Try Chrome or Edge on a supported device.";
+  }
+
+  return "Only watches and activity bands matching known names or an advertised heart-rate service will be shown.";
+}
+
+function updateConnectionAvailability() {
+  const phoneIssue = getPhoneConnectionIssue();
+  const phoneReady = phoneIssue.startsWith("Ready.");
+  connectPhoneBtn.disabled = !phoneReady;
+  connectPhoneBtn.title = phoneReady ? "" : phoneIssue;
+  phoneCompatibilityText.textContent = phoneIssue;
+  phoneCompatibilityText.className = `connection-note ${phoneReady ? "ready" : "warning"}`;
+
+  const watchIssue = getWatchConnectionIssue();
+  const watchReady = watchIssue.startsWith("Only watches");
+  connectWatchBtn.disabled = !watchReady;
+  connectWatchBtn.title = watchReady ? "" : watchIssue;
+  watchCompatibilityText.textContent = watchIssue;
+  watchCompatibilityText.className = `connection-note ${watchReady ? "ready" : "warning"}`;
+}
+
+function waitForMotionSensorSample(timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    let timeoutId;
+
+    const cleanup = () => {
+      window.removeEventListener("devicemotion", handleSample);
+      clearTimeout(timeoutId);
+    };
+
+    const handleSample = event => {
+      const acceleration = event.accelerationIncludingGravity || event.acceleration;
+      if (!acceleration) return;
+
+      const values = [acceleration.x, acceleration.y, acceleration.z];
+      if (!values.some(value => Number.isFinite(value))) return;
+
+      cleanup();
+      resolve();
+    };
+
+    window.addEventListener("devicemotion", handleSample);
+    timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error("No motion sensor data was received. Move the phone slightly and try again."));
+    }, timeoutMs);
+  });
+}
+
 function updateUI() {
   timerDisplay.textContent = formatTime(seconds);
 
@@ -150,13 +261,13 @@ function updateUI() {
   connectionText.textContent = deviceConnected ? `${deviceLabel} Connected` : "No Device Connected";
   connectionSubtext.textContent = deviceConnected
     ? `${connectionMethod} · ${getModeLabel()}`
-    : "Connect a phone or smart watch";
+    : "Connect a supported mobile device or smart watch";
   connectBtn.textContent = deviceConnected ? "Manage" : "Connect";
   connectionDot.classList.toggle("off", !deviceConnected);
 
   deviceStatusText.textContent = deviceConnected
     ? `${deviceLabel} is ready to monitor movement. Current mode: ${getModeLabel()}.`
-    : "Choose this phone or pair a smart watch to begin.";
+    : "Choose this mobile device or pair a compatible smart watch to begin.";
   deviceTypeText.textContent = deviceConnected ? deviceLabel : "None";
   connectionMethodText.textContent = deviceConnected ? connectionMethod : "Not connected";
   deviceStatusIcon.setAttribute("data-lucide", connectedDeviceType === "watch" ? "watch" : "smartphone");
@@ -583,26 +694,30 @@ function handleDeviceMotion(event) {
 
 async function connectPhone() {
   try {
-    let method = "Browser connection (demo sensors)";
-    let motionSensorsAvailable = false;
-
-    if (typeof DeviceMotionEvent !== "undefined") {
-      if (typeof DeviceMotionEvent.requestPermission === "function") {
-        const permission = await DeviceMotionEvent.requestPermission();
-        if (permission !== "granted") {
-          throw new Error("Motion sensor permission was not granted.");
-        }
-      }
-
-      motionSensorsAvailable = true;
-      method = "Browser motion sensors";
+    const connectionIssue = getPhoneConnectionIssue();
+    if (!connectionIssue.startsWith("Ready.")) {
+      throw new Error(connectionIssue);
     }
+
+    if (typeof DeviceMotionEvent.requestPermission === "function") {
+      const permission = await DeviceMotionEvent.requestPermission();
+      if (permission !== "granted") {
+        throw new Error("Motion sensor permission was not granted.");
+      }
+    }
+
+    setQrCard(
+      "active",
+      "Checking this mobile device",
+      "Move the phone slightly while SIP Move verifies a live motion sensor reading.",
+      "smartphone"
+    );
+
+    await waitForMotionSensorSample();
 
     if (deviceConnected) disconnectDevice(false);
-    if (motionSensorsAvailable) {
-      window.addEventListener("devicemotion", handleDeviceMotion);
-    }
-    setConnectedDevice("phone", "This Phone", method);
+    window.addEventListener("devicemotion", handleDeviceMotion);
+    setConnectedDevice("phone", "This Mobile Device", "Verified motion sensors");
   } catch (error) {
     setQrCard(
       "active",
@@ -614,11 +729,12 @@ async function connectPhone() {
 }
 
 async function connectWatch() {
-  if (!navigator.bluetooth) {
+  const connectionIssue = getWatchConnectionIssue();
+  if (!connectionIssue.startsWith("Only watches")) {
     setQrCard(
       "active",
       "Bluetooth pairing unavailable",
-      "This browser does not support Web Bluetooth. Use the smart-watch demo connection instead.",
+      connectionIssue,
       "bluetooth-off"
     );
     return;
@@ -626,7 +742,8 @@ async function connectWatch() {
 
   try {
     const selectedDevice = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true
+      filters: SMART_WATCH_FILTERS,
+      optionalServices: SMART_WATCH_OPTIONAL_SERVICES
     });
 
     if (!selectedDevice.gatt) {
@@ -645,7 +762,7 @@ async function connectWatch() {
       cancelled ? "idle" : "active",
       cancelled ? "Pairing cancelled" : "Watch connection failed",
       cancelled
-        ? "No device was selected. You can try again or use the demo watch connection."
+        ? "No compatible watch was selected. Watches that do not advertise a supported name or service may require a companion app."
         : (error.message || "The watch could not be connected."),
       cancelled ? "watch" : "triangle-alert"
     );
@@ -1058,5 +1175,6 @@ saveGoalBtn.addEventListener("click", saveDailyGoal);
 resetDemoBtn.addEventListener("click", resetDemoProgress);
 
 loadSavedTheme();
+updateConnectionAvailability();
 updateUI();
 lucide.createIcons();
