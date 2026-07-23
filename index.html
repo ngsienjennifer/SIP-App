@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>SIP Move</title>
+  <title>Budge — Movement Companion</title>
+  <meta name="description" content="Budge helps you turn sitting reminders into verified movement breaks." />
+  <meta name="theme-color" content="#0f77b8" />
+  <link rel="icon" type="image/png" href="assets/budge-logo.png" />
+  <link rel="apple-touch-icon" href="assets/budge-logo.png" />
 
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,12 +21,12 @@
     <section class="hero">
       <div>
         <p class="eyebrow">Movement Companion</p>
-        <h1>SIP Move</h1>
+        <h1>Budge</h1>
         <p class="subtitle">Detect. Prompt. Move. Achieve.</p>
       </div>
 
-      <div class="device-orb">
-        <i data-lucide="smartphone"></i>
+      <div class="brand-orb">
+        <img src="assets/budge-logo.png" alt="Budge running figure and arrow logo" />
       </div>
     </section>
 
@@ -136,7 +140,7 @@
       <section class="card sensor-card">
         <h2>Connected Device Sensors</h2>
         <p class="hint">
-          A connected phone or smart watch can use motion sensors to verify movement. The demo buttons remain available when browser sensor data is unavailable.
+          Phone points require sustained movement. Direct watch pairing confirms the Bluetooth link, while movement data depends on services exposed by the watch manufacturer.
         </p>
 
         <section class="card sensor-card">
@@ -165,6 +169,17 @@
             <strong id="sensorStatusTitle">No movement required yet</strong>
             <p id="sensorStatusText">Connect a device, then start the timer.</p>
           </div>
+        </div>
+
+        <div id="movementProgressPanel" class="movement-progress" hidden>
+          <div class="movement-progress-heading">
+            <strong>Continuous movement</strong>
+            <span id="movementProgressTime">0 / 12 sec</span>
+          </div>
+          <div class="movement-progress-track" role="progressbar" aria-label="Continuous movement progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="movementProgressFill"></span>
+          </div>
+          <p>Keep moving consistently. Pausing for more than 1.6 seconds resets this verification.</p>
         </div>
 
         <button id="simulateMovementBtn" class="secondary-wide-btn" disabled>
@@ -281,7 +296,7 @@
 
       <section class="card">
         <h2>Connect a Device</h2>
-        <p class="hint">Use this mobile device's verified motion sensors, or pair a compatible Bluetooth smart watch.</p>
+        <p class="hint">Use this mobile device's verified motion sensors, or choose a watch family before starting Bluetooth pairing.</p>
 
         <div class="device-options">
           <button id="connectPhoneBtn" class="device-option-btn" aria-describedby="phoneCompatibilityText">
@@ -290,9 +305,21 @@
           </button>
           <p id="phoneCompatibilityText" class="connection-note" role="status"></p>
 
+          <label class="connection-field" for="watchFamilySelect">
+            <span>Watch family</span>
+            <select id="watchFamilySelect">
+              <option value="fitness">Fitbit / fitness band</option>
+              <option value="samsung">Samsung Galaxy Watch</option>
+              <option value="apple">Apple Watch</option>
+              <option value="garmin">Garmin</option>
+              <option value="other">Other named smart watch</option>
+              <option value="compatibility">Compatibility scan (all devices)</option>
+            </select>
+          </label>
+
           <button id="connectWatchBtn" class="device-option-btn" aria-describedby="watchCompatibilityText">
             <i data-lucide="watch"></i>
-            <span><strong>Pair Smart Watch</strong><small>Filtered Web Bluetooth pairing</small></span>
+            <span><strong>Try Direct Watch Pairing</strong><small>Uses the selected watch-family profile</small></span>
           </button>
           <p id="watchCompatibilityText" class="connection-note" role="status"></p>
 
@@ -304,7 +331,7 @@
 
         <aside class="connection-limit" aria-label="Connection requirement">
           <i data-lucide="info"></i>
-          <p>A nearby phone cannot act as a Bluetooth motion sensor from a normal web page alone. Open SIP Move on that phone, or use a dedicated companion app that exposes an approved Bluetooth service.</p>
+          <p>Many commercial watches sync through their manufacturer's app or health platform instead of exposing motion data to a browser. Budge reports a Bluetooth link as paired, but does not claim movement data is available unless a permitted fitness service is found.</p>
         </aside>
 
         <button id="disconnectDeviceBtn" class="danger-wide-btn" disabled>
@@ -319,8 +346,8 @@
         <div class="steps">
           <div><span>1</span><p>Open the app on a mobile device or pair a compatible smart watch</p></div>
           <div><span>2</span><p>The app monitors the sitting timer</p></div>
-          <div><span>3</span><p>Your connected device sends a movement prompt</p></div>
-          <div><span>4</span><p>Device motion or an area QR scan verifies the break</p></div>
+          <div><span>3</span><p>Budge sends a movement prompt</p></div>
+          <div><span>4</span><p>Sustained phone movement or an area QR scan verifies the break</p></div>
           <div><span>5</span><p>Points and progress update in the app</p></div>
         </div>
       </section>
@@ -333,7 +360,7 @@
           <div><i data-lucide="bell"></i><p>Smart Reminders</p></div>
           <div><i data-lucide="bar-chart-3"></i><p>Activity Analytics</p></div>
           <div><i data-lucide="smartphone"></i><p>Phone Sensors</p></div>
-          <div><i data-lucide="watch"></i><p>Smart Watch Pairing</p></div>
+          <div><i data-lucide="watch"></i><p>Brand-aware Watch Pairing</p></div>
           <div><i data-lucide="qr-code"></i><p>QR Demo Verification</p></div>
         </div>
       </section>
