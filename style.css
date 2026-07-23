@@ -176,6 +176,25 @@ body[data-theme="dark"] {
   height: 36px;
 }
 
+.brand-orb {
+  width: 86px;
+  height: 86px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 26px rgba(2, 20, 52, 0.24);
+}
+
+.brand-orb img {
+  width: 94%;
+  height: 94%;
+  object-fit: contain;
+}
+
 .connection-card,
 .card,
 .mini-card {
@@ -671,6 +690,29 @@ body[data-theme="dark"] {
   color: #b45309;
 }
 
+.connection-field {
+  display: grid;
+  gap: 7px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.connection-field select {
+  width: 100%;
+  border: 1px solid rgba(79, 124, 255, 0.35);
+  border-radius: 14px;
+  padding: 11px 12px;
+  color: var(--text);
+  background: var(--card);
+  font: inherit;
+}
+
+.connection-field select:focus-visible {
+  outline: 3px solid rgba(79, 124, 255, 0.28);
+  outline-offset: 2px;
+}
+
 .device-option-btn,
 .danger-wide-btn {
   width: 100%;
@@ -747,6 +789,55 @@ body[data-theme="dark"] {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
+}
+
+.movement-progress {
+  margin: 14px 0;
+  padding: 13px;
+  border: 1px solid rgba(79, 124, 255, 0.22);
+  border-radius: 16px;
+  background: rgba(79, 124, 255, 0.07);
+}
+
+.movement-progress[hidden] {
+  display: none;
+}
+
+.movement-progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.movement-progress-heading span {
+  color: var(--blue);
+  font-weight: 900;
+}
+
+.movement-progress-track {
+  height: 10px;
+  margin: 9px 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.32);
+}
+
+.movement-progress-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue), var(--green));
+  transition: width 120ms linear;
+}
+
+.movement-progress p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .danger-wide-btn {
