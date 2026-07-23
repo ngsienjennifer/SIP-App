@@ -16,32 +16,105 @@ let connectedDeviceType = null;
 let connectedDeviceName = "";
 let connectionMethod = "";
 let bluetoothDevice = null;
-let motionSampleCount = 0;
+let movementActiveDurationMs = 0;
+let lastMotionEventAt = null;
+let lastMeaningfulMotionAt = null;
+let movementQualified = false;
 
 const MOBILE_USER_AGENT_PATTERN = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i;
-const SMART_WATCH_FILTERS = [
-  { services: ["heart_rate"] },
-  { namePrefix: "Galaxy Watch" },
-  { namePrefix: "Pixel Watch" },
-  { namePrefix: "Apple Watch" },
-  { namePrefix: "Garmin" },
-  { namePrefix: "Fitbit" },
-  { namePrefix: "Amazfit" },
-  { namePrefix: "HUAWEI WATCH" },
-  { namePrefix: "Huawei Watch" },
-  { namePrefix: "Mi Band" },
-  { namePrefix: "Xiaomi Smart Band" },
-  { namePrefix: "WHOOP" },
-  { namePrefix: "Smart Watch" },
-  { namePrefix: "SmartWatch" },
-  { namePrefix: "Watch" },
-  { namePrefix: "Band" }
+const MOVEMENT_REQUIRED_MS = 12000;
+const MOVEMENT_MAX_GAP_MS = 1600;
+const MOVEMENT_ACCELERATION_THRESHOLD = 0.9;
+const STANDARD_GRAVITY = 9.81;
+
+const FITNESS_SERVICE_IDS = [
+  0x180d, // Heart Rate
+  0x1814, // Running Speed and Cadence
+  0x1816, // Cycling Speed and Cadence
+  0x1826, // Fitness Machine
+  0x183e  // Physical Activity Monitor
 ];
 const SMART_WATCH_OPTIONAL_SERVICES = [
-  "heart_rate",
-  "battery_service",
-  "device_information"
+  ...FITNESS_SERVICE_IDS,
+  0x180f, // Battery
+  0x180a  // Device Information
 ];
+
+const STANDARD_FITNESS_FILTERS = FITNESS_SERVICE_IDS.map(service => ({ services: [service] }));
+const WATCH_PROFILES = {
+  fitness: {
+    label: "Fitbit / fitness band",
+    filters: [
+      ...STANDARD_FITNESS_FILTERS,
+      { namePrefix: "Fitbit" },
+      { namePrefix: "Charge" },
+      { namePrefix: "Inspire" },
+      { namePrefix: "Versa" },
+      { namePrefix: "Sense" },
+      { namePrefix: "Luxe" },
+      { namePrefix: "Ace" },
+      { namePrefix: "Flex" },
+      { namePrefix: "Ionic" },
+      { namePrefix: "Blaze" },
+      { namePrefix: "Surge" },
+      { namePrefix: "Mi Band" },
+      { namePrefix: "Xiaomi Smart Band" },
+      { namePrefix: "Band" }
+    ],
+    note: "Includes standard fitness services and common Fitbit model-family names. Fitbit devices may still require Fitbit account sync instead of direct browser Bluetooth."
+  },
+  samsung: {
+    label: "Samsung Galaxy Watch",
+    filters: [
+      ...STANDARD_FITNESS_FILTERS,
+      { namePrefix: "Galaxy Watch" },
+      { namePrefix: "Galaxy Fit" },
+      { namePrefix: "Gear" }
+    ],
+    note: "Targets Galaxy Watch, Galaxy Fit, and Gear names. Samsung Health remains the normal route when the watch does not expose a browser-readable service."
+  },
+  apple: {
+    label: "Apple Watch",
+    filters: [
+      ...STANDARD_FITNESS_FILTERS,
+      { namePrefix: "Apple Watch" }
+    ],
+    note: "Apple Watch activity normally reaches apps through Apple Health in a native Apple-platform app, not direct browser Bluetooth."
+  },
+  garmin: {
+    label: "Garmin",
+    filters: [
+      ...STANDARD_FITNESS_FILTERS,
+      { namePrefix: "Garmin" },
+      { namePrefix: "Forerunner" },
+      { namePrefix: "Venu" },
+      { namePrefix: "Fenix" },
+      { namePrefix: "vivo" }
+    ],
+    note: "Targets common Garmin names plus standard fitness services. Some Garmin models expose data only through Garmin Connect or approved integrations."
+  },
+  other: {
+    label: "Other named smart watch",
+    filters: [
+      ...STANDARD_FITNESS_FILTERS,
+      { namePrefix: "Pixel Watch" },
+      { namePrefix: "Amazfit" },
+      { namePrefix: "HUAWEI WATCH" },
+      { namePrefix: "Huawei Watch" },
+      { namePrefix: "WHOOP" },
+      { namePrefix: "Smart Watch" },
+      { namePrefix: "SmartWatch" },
+      { namePrefix: "Watch" },
+      { namePrefix: "Wear" }
+    ],
+    note: "Shows devices advertising a standard fitness service or a common watch name. Pairing does not guarantee access to motion data."
+  },
+  compatibility: {
+    label: "Compatibility scan",
+    acceptAllDevices: true,
+    note: "Last-resort scan: the picker will show unrelated nearby Bluetooth devices. Use only when a watch is missing from the filtered profiles."
+  }
+};
 
 let dndMode = "off";
 let dndTimer = null;
@@ -103,6 +176,7 @@ const demoWatchBtn = document.getElementById("demoWatchBtn");
 const disconnectDeviceBtn = document.getElementById("disconnectDeviceBtn");
 const phoneCompatibilityText = document.getElementById("phoneCompatibilityText");
 const watchCompatibilityText = document.getElementById("watchCompatibilityText");
+const watchFamilySelect = document.getElementById("watchFamilySelect");
 
 const reminderInput = document.getElementById("reminderInput");
 const goalSelect = document.getElementById("goalSelect");
@@ -125,6 +199,9 @@ const simulateMovementBtn = document.getElementById("simulateMovementBtn");
 const sensorStatusDot = document.getElementById("sensorStatusDot");
 const sensorStatusTitle = document.getElementById("sensorStatusTitle");
 const sensorStatusText = document.getElementById("sensorStatusText");
+const movementProgressPanel = document.getElementById("movementProgressPanel");
+const movementProgressTime = document.getElementById("movementProgressTime");
+const movementProgressFill = document.getElementById("movementProgressFill");
 
 const simulatePassiveActivityBtn = document.getElementById("simulatePassiveActivityBtn");
 const activityStatusDot = document.getElementById("activityStatusDot");
@@ -168,7 +245,7 @@ function isLikelyMobileDevice() {
 
 function getPhoneConnectionIssue() {
   if (!isLikelyMobileDevice()) {
-    return "Unavailable on this computer. Open SIP Move directly on the phone or tablet you want to use.";
+    return "Unavailable on this computer. Open Budge directly on the phone or tablet you want to use.";
   }
 
   if (!window.isSecureContext) {
@@ -191,7 +268,11 @@ function getWatchConnectionIssue() {
     return "Web Bluetooth is unavailable in this browser. Try Chrome or Edge on a supported device.";
   }
 
-  return "Only watches and activity bands matching known names or an advertised heart-rate service will be shown.";
+  return "";
+}
+
+function getSelectedWatchProfile() {
+  return WATCH_PROFILES[watchFamilySelect.value] || WATCH_PROFILES.fitness;
 }
 
 function updateConnectionAvailability() {
@@ -203,11 +284,61 @@ function updateConnectionAvailability() {
   phoneCompatibilityText.className = `connection-note ${phoneReady ? "ready" : "warning"}`;
 
   const watchIssue = getWatchConnectionIssue();
-  const watchReady = watchIssue.startsWith("Only watches");
+  const watchReady = !watchIssue;
+  const watchProfile = getSelectedWatchProfile();
   connectWatchBtn.disabled = !watchReady;
   connectWatchBtn.title = watchReady ? "" : watchIssue;
-  watchCompatibilityText.textContent = watchIssue;
-  watchCompatibilityText.className = `connection-note ${watchReady ? "ready" : "warning"}`;
+  watchFamilySelect.disabled = !watchReady;
+  watchCompatibilityText.textContent = watchReady ? watchProfile.note : watchIssue;
+  watchCompatibilityText.className = `connection-note ${watchReady && !watchProfile.acceptAllDevices ? "ready" : "warning"}`;
+}
+
+function resetMovementValidation() {
+  movementActiveDurationMs = 0;
+  lastMotionEventAt = null;
+  lastMeaningfulMotionAt = null;
+  movementQualified = false;
+  updateMovementProgressUI();
+}
+
+function updateMovementProgressUI() {
+  if (!movementProgressPanel || !movementProgressFill || !movementProgressTime) return;
+
+  const showProgress = movementRequired && deviceConnected && connectedDeviceType === "phone";
+  const progressPercent = Math.min(100, Math.round((movementActiveDurationMs / MOVEMENT_REQUIRED_MS) * 100));
+  const activeSeconds = Math.min(
+    Math.ceil(MOVEMENT_REQUIRED_MS / 1000),
+    Math.floor(movementActiveDurationMs / 1000)
+  );
+
+  movementProgressPanel.hidden = !showProgress;
+  movementProgressFill.style.width = `${progressPercent}%`;
+  movementProgressTime.textContent = `${activeSeconds} / ${MOVEMENT_REQUIRED_MS / 1000} sec`;
+
+  const progressTrack = movementProgressFill.parentElement;
+  if (progressTrack) {
+    progressTrack.setAttribute("aria-valuenow", String(progressPercent));
+  }
+}
+
+function getMotionIntensity(event) {
+  const linearAcceleration = event.acceleration;
+  if (linearAcceleration) {
+    const x = Number(linearAcceleration.x) || 0;
+    const y = Number(linearAcceleration.y) || 0;
+    const z = Number(linearAcceleration.z) || 0;
+    const linearMagnitude = Math.sqrt((x * x) + (y * y) + (z * z));
+    if (Number.isFinite(linearMagnitude) && linearMagnitude > 0) return linearMagnitude;
+  }
+
+  const gravityAcceleration = event.accelerationIncludingGravity;
+  if (!gravityAcceleration) return 0;
+
+  const x = Number(gravityAcceleration.x) || 0;
+  const y = Number(gravityAcceleration.y) || 0;
+  const z = Number(gravityAcceleration.z) || 0;
+  const gravityMagnitude = Math.sqrt((x * x) + (y * y) + (z * z));
+  return Math.abs(gravityMagnitude - STANDARD_GRAVITY);
 }
 
 function waitForMotionSensorSample(timeoutMs = 5000) {
@@ -266,7 +397,9 @@ function updateUI() {
   connectionDot.classList.toggle("off", !deviceConnected);
 
   deviceStatusText.textContent = deviceConnected
-    ? `${deviceLabel} is ready to monitor movement. Current mode: ${getModeLabel()}.`
+    ? connectedDeviceType === "watch"
+      ? `${deviceLabel} is paired. Live movement access depends on the fitness services exposed by the watch. Current mode: ${getModeLabel()}.`
+      : `${deviceLabel} is ready for sustained movement verification. Current mode: ${getModeLabel()}.`
     : "Choose this mobile device or pair a compatible smart watch to begin.";
   deviceTypeText.textContent = deviceConnected ? deviceLabel : "None";
   connectionMethodText.textContent = deviceConnected ? connectionMethod : "Not connected";
@@ -276,10 +409,13 @@ function updateUI() {
   rewardPointsDisplay.textContent = `${points} points`;
 
   if (verifyMovementBtn) {
-    verifyMovementBtn.disabled = !movementRequired || !deviceConnected;
-    verifyMovementBtn.innerHTML = movementRequired
-      ? `<i data-lucide="radar"></i> Device Waiting for Movement`
-      : `<i data-lucide="radar"></i> Waiting for Device Verification`;
+    const phoneCanReportProgress = movementRequired && deviceConnected && connectedDeviceType === "phone";
+    verifyMovementBtn.disabled = !phoneCanReportProgress;
+    verifyMovementBtn.innerHTML = !movementRequired
+      ? `<i data-lucide="radar"></i> Waiting for Device Verification`
+      : connectedDeviceType === "phone"
+        ? `<i data-lucide="radar"></i> Keep Moving — ${Math.floor(movementActiveDurationMs / 1000)}/${MOVEMENT_REQUIRED_MS / 1000}s`
+        : `<i data-lucide="radar"></i> Watch Motion Data Unavailable`;
   }
 
   if (simulateMovementBtn) {
@@ -288,7 +424,9 @@ function updateUI() {
 
   if (movementRequired) {
     sensorStatusTitle.textContent = "Movement required";
-    sensorStatusText.textContent = `${deviceLabel} is checking for: ${currentVerifiedGoal}`;
+    sensorStatusText.textContent = connectedDeviceType === "phone"
+      ? `${deviceLabel} needs ${MOVEMENT_REQUIRED_MS / 1000} seconds of consistent movement for: ${currentVerifiedGoal}`
+      : `${deviceLabel} is paired, but its browser-accessible motion service is unavailable. Use an Area QR or the clearly labelled demo control.`;
     sensorStatusDot.className = "sensor-dot active";
   } else {
     sensorStatusTitle.textContent = "No movement required yet";
@@ -310,6 +448,8 @@ function updateUI() {
     activityStatusDot.className =
       deviceConnected && passiveActivityCount > 0 ? "sensor-dot active" : "sensor-dot idle";
   }
+
+  updateMovementProgressUI();
 
   updateDndText();
   updateHistory();
@@ -367,6 +507,7 @@ function resetTimer() {
 
   seconds = 0;
   movementRequired = false;
+  resetMovementValidation();
   currentVerifiedGoal = "";
   currentVerifiedPoints = 0;
   timerMode.textContent = "Ready";
@@ -391,6 +532,7 @@ function triggerReminder() {
 
   if (dndMode === "exam") {
     movementRequired = false;
+    resetMovementValidation();
     timerMode.textContent = "DND active";
 
     setQrCard(
@@ -406,6 +548,7 @@ function triggerReminder() {
   }
 
   movementRequired = true;
+  resetMovementValidation();
 
   if (dndMode === "class") {
     timerMode.textContent = "Silent prompt";
@@ -507,7 +650,9 @@ function addMovementPoints(earned) {
   }
 }
 
-function verifyMovementFromDevice() {
+function verifyMovementFromDevice(options = {}) {
+  const allowDemo = options.allowDemo === true;
+
   if (!deviceConnected) {
     setQrCard(
       "active",
@@ -528,23 +673,49 @@ function verifyMovementFromDevice() {
     return;
   }
 
+  if (!allowDemo && connectedDeviceType === "watch") {
+    setQrCard(
+      "active",
+      "Watch motion data unavailable",
+      "The Bluetooth link is paired, but this watch does not expose browser-readable motion data. Use an Area QR or the labelled demo control.",
+      "watch"
+    );
+    return;
+  }
+
+  if (!allowDemo && !movementQualified) {
+    const completedSeconds = Math.floor(movementActiveDurationMs / 1000);
+    setQrCard(
+      "active",
+      "Keep moving consistently",
+      `Budge has verified ${completedSeconds} of ${MOVEMENT_REQUIRED_MS / 1000} required movement seconds. A pause longer than ${MOVEMENT_MAX_GAP_MS / 1000} seconds resets progress.`,
+      "activity"
+    );
+    return;
+  }
+
   const earned = currentVerifiedPoints;
+  const verificationSource = allowDemo ? "Demo simulation" : "Continuous phone motion";
 
   breaks += 1;
   addMovementPoints(earned);
   seconds = 0;
   movementRequired = false;
+  resetMovementValidation();
 
   timerMode.textContent = "Verified";
 
   setQrCard(
     "success",
     "Goal accomplished!",
-    `${getConnectedDeviceLabel()} verified: ${currentVerifiedGoal}. +${earned} points earned.`,
+    `${verificationSource} verified: ${currentVerifiedGoal}. +${earned} points earned.`,
     "badge-check"
   );
 
-  addHistory("Device verified movement", `${currentVerifiedGoal} · +${earned} points`);
+  addHistory(
+    allowDemo ? "Demo movement verified" : "Continuous movement verified",
+    `${currentVerifiedGoal} · +${earned} points`
+  );
 
   setTimeout(() => {
     if (!movementRequired) {
@@ -658,7 +829,9 @@ function setConnectedDevice(type, name, method) {
   setQrCard(
     "success",
     `${name} connected`,
-    "Movement monitoring is ready. The QR scan simulation is also available.",
+    type === "phone"
+      ? "Sustained movement monitoring is ready. Keep moving for the full verification period when prompted."
+      : "The watch link is ready. Live motion verification depends on services exposed by the watch; Area QR and demo verification remain available.",
     type === "watch" ? "watch" : "smartphone"
   );
 
@@ -669,26 +842,41 @@ function setConnectedDevice(type, name, method) {
 function handleDeviceMotion(event) {
   if (!deviceConnected || connectedDeviceType !== "phone") return;
 
-  const acceleration = event.accelerationIncludingGravity || event.acceleration;
-  if (!acceleration) return;
+  const now = typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+  const eventGapMs = lastMotionEventAt === null
+    ? 0
+    : Math.min(250, Math.max(0, now - lastMotionEventAt));
+  const movementIntensity = getMotionIntensity(event);
 
-  const x = acceleration.x || 0;
-  const y = acceleration.y || 0;
-  const z = acceleration.z || 0;
-  const magnitude = Math.sqrt((x * x) + (y * y) + (z * z));
+  lastMotionEventAt = now;
+  if (!movementRequired) return;
 
-  if (magnitude > 12.5) {
-    motionSampleCount += 1;
-    activityStatusTitle.textContent = "Phone movement detected";
-    activityStatusText.textContent = "Live phone sensor activity received.";
-    activityStatusDot.className = "sensor-dot active";
-
-    if (movementRequired && motionSampleCount >= 3) {
-      motionSampleCount = 0;
-      verifyMovementFromDevice();
+  if (movementIntensity >= MOVEMENT_ACCELERATION_THRESHOLD) {
+    if (lastMeaningfulMotionAt !== null && now - lastMeaningfulMotionAt > MOVEMENT_MAX_GAP_MS) {
+      movementActiveDurationMs = 0;
     }
-  } else {
-    motionSampleCount = Math.max(0, motionSampleCount - 1);
+
+    movementActiveDurationMs += eventGapMs;
+    lastMeaningfulMotionAt = now;
+
+    activityStatusTitle.textContent = "Consistent phone movement detected";
+    activityStatusText.textContent = `${Math.floor(movementActiveDurationMs / 1000)} of ${MOVEMENT_REQUIRED_MS / 1000} movement seconds verified.`;
+    activityStatusDot.className = "sensor-dot active";
+  } else if (lastMeaningfulMotionAt !== null && now - lastMeaningfulMotionAt > MOVEMENT_MAX_GAP_MS) {
+    movementActiveDurationMs = 0;
+    lastMeaningfulMotionAt = null;
+    activityStatusTitle.textContent = "Movement progress reset";
+    activityStatusText.textContent = "Keep the phone moving consistently to restart verification.";
+    activityStatusDot.className = "sensor-dot idle";
+  }
+
+  updateMovementProgressUI();
+
+  if (!movementQualified && movementActiveDurationMs >= MOVEMENT_REQUIRED_MS) {
+    movementQualified = true;
+    verifyMovementFromDevice({ source: "continuous-phone-motion" });
   }
 }
 
@@ -709,7 +897,7 @@ async function connectPhone() {
     setQrCard(
       "active",
       "Checking this mobile device",
-      "Move the phone slightly while SIP Move verifies a live motion sensor reading.",
+      "Move the phone slightly while Budge verifies a live motion sensor reading.",
       "smartphone"
     );
 
@@ -728,9 +916,32 @@ async function connectPhone() {
   }
 }
 
+async function findAccessibleFitnessService(server) {
+  if (!server || typeof server.getPrimaryService !== "function") return "";
+
+  const serviceLabels = new Map([
+    [0x180d, "Heart Rate"],
+    [0x1814, "Running Speed and Cadence"],
+    [0x1816, "Cycling Speed and Cadence"],
+    [0x1826, "Fitness Machine"],
+    [0x183e, "Physical Activity Monitor"]
+  ]);
+
+  for (const serviceId of FITNESS_SERVICE_IDS) {
+    try {
+      await server.getPrimaryService(serviceId);
+      return serviceLabels.get(serviceId) || "Standard fitness";
+    } catch (error) {
+      // A rejected lookup means this permitted standard service is not exposed.
+    }
+  }
+
+  return "";
+}
+
 async function connectWatch() {
   const connectionIssue = getWatchConnectionIssue();
-  if (!connectionIssue.startsWith("Only watches")) {
+  if (connectionIssue) {
     setQrCard(
       "active",
       "Bluetooth pairing unavailable",
@@ -741,28 +952,43 @@ async function connectWatch() {
   }
 
   try {
-    const selectedDevice = await navigator.bluetooth.requestDevice({
-      filters: SMART_WATCH_FILTERS,
-      optionalServices: SMART_WATCH_OPTIONAL_SERVICES
-    });
+    const watchProfile = getSelectedWatchProfile();
+    const requestOptions = watchProfile.acceptAllDevices
+      ? { acceptAllDevices: true, optionalServices: SMART_WATCH_OPTIONAL_SERVICES }
+      : { filters: watchProfile.filters, optionalServices: SMART_WATCH_OPTIONAL_SERVICES };
+    const selectedDevice = await navigator.bluetooth.requestDevice(requestOptions);
 
     if (!selectedDevice.gatt) {
       throw new Error("The selected device does not expose a Bluetooth data connection.");
     }
 
-    await selectedDevice.gatt.connect();
+    const gattServer = await selectedDevice.gatt.connect();
+    const accessibleFitnessService = await findAccessibleFitnessService(gattServer);
     if (deviceConnected) disconnectDevice(false);
     bluetoothDevice = selectedDevice;
     bluetoothDevice.addEventListener("gattserverdisconnected", handleWatchDisconnected);
 
-    setConnectedDevice("watch", selectedDevice.name || "Smart Watch", "Web Bluetooth");
+    const deviceName = selectedDevice.name || "Smart Watch";
+    const connectionDetail = accessibleFitnessService
+      ? `Web Bluetooth · ${accessibleFitnessService} service`
+      : "Web Bluetooth · paired only";
+    setConnectedDevice("watch", deviceName, connectionDetail);
+
+    setQrCard(
+      "success",
+      `${deviceName} paired`,
+      accessibleFitnessService
+        ? `${accessibleFitnessService} is available. Budge does not treat heart-rate or cadence alone as proof of sustained movement.`
+        : "The Bluetooth link is active, but no permitted standard fitness service was found. Movement verification requires an Area QR or the labelled demo control.",
+      "watch"
+    );
   } catch (error) {
     const cancelled = error.name === "NotFoundError";
     setQrCard(
       cancelled ? "idle" : "active",
       cancelled ? "Pairing cancelled" : "Watch connection failed",
       cancelled
-        ? "No compatible watch was selected. Watches that do not advertise a supported name or service may require a companion app."
+        ? "No device was selected. Try the watch's named profile first; use Compatibility scan only if the watch does not appear."
         : (error.message || "The watch could not be connected."),
       cancelled ? "watch" : "triangle-alert"
     );
@@ -799,7 +1025,7 @@ function disconnectDevice(showMessage = true) {
   clearInterval(timer);
   timer = null;
   movementRequired = false;
-  motionSampleCount = 0;
+  resetMovementValidation();
   deviceConnected = false;
   connectedDeviceType = null;
   connectedDeviceName = "";
@@ -995,7 +1221,7 @@ function changeTheme() {
   const theme = themeSelect.value;
   document.body.setAttribute("data-theme", theme);
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("sipMoveTheme", theme);
+  localStorage.setItem("budgeTheme", theme);
 
   setQrCard(
     "idle",
@@ -1006,7 +1232,7 @@ function changeTheme() {
 }
 
 function loadSavedTheme() {
-  const savedTheme = localStorage.getItem("sipMoveTheme") || "ocean";
+  const savedTheme = localStorage.getItem("budgeTheme") || localStorage.getItem("sipMoveTheme") || "ocean";
 
   document.body.setAttribute("data-theme", savedTheme);
   document.documentElement.setAttribute("data-theme", savedTheme);
@@ -1057,6 +1283,7 @@ function resetDemoProgress() {
   passiveActivityPointsToday = 0;
 
   movementRequired = false;
+  resetMovementValidation();
   currentVerifiedGoal = "";
   currentVerifiedPoints = 0;
 
@@ -1093,6 +1320,7 @@ if (qrScanCard) {
       addMovementPoints(earned);
       seconds = 0;
       movementRequired = false;
+      resetMovementValidation();
       timerMode.textContent = "Verified";
 
       setQrCard(
@@ -1151,11 +1379,12 @@ resetBtn.addEventListener("click", resetTimer);
 connectBtn.addEventListener("click", showDevicesTab);
 connectPhoneBtn.addEventListener("click", connectPhone);
 connectWatchBtn.addEventListener("click", connectWatch);
+watchFamilySelect.addEventListener("change", updateConnectionAvailability);
 demoWatchBtn.addEventListener("click", connectDemoWatch);
 disconnectDeviceBtn.addEventListener("click", () => disconnectDevice(true));
 
 verifyMovementBtn.addEventListener("click", verifyMovementFromDevice);
-simulateMovementBtn.addEventListener("click", verifyMovementFromDevice);
+simulateMovementBtn.addEventListener("click", () => verifyMovementFromDevice({ allowDemo: true }));
 
 if (simulatePassiveActivityBtn) {
   simulatePassiveActivityBtn.addEventListener("click", simulatePassiveDeviceActivity);
@@ -1173,6 +1402,11 @@ themeSelect.addEventListener("change", changeTheme);
 dndBtn.addEventListener("click", activateDnd);
 saveGoalBtn.addEventListener("click", saveDailyGoal);
 resetDemoBtn.addEventListener("click", resetDemoProgress);
+
+loadSavedTheme();
+updateConnectionAvailability();
+updateUI();
+lucide.createIcons();
 
 loadSavedTheme();
 updateConnectionAvailability();
