@@ -31,3 +31,6 @@ Serve the folder over HTTPS or localhost and open `index.html` in a supported br
 - Fitbit Web API: https://dev.fitbit.com/build/reference/web-api/explore/
 - Apple HealthKit: https://developer.apple.com/documentation/healthkit
 - Samsung Health device manager: https://developer.samsung.com/health/data/guide/features/device-manager.html
+
+## Access Application
+- https://ngsienjennifer.github.io/SIP-App/
